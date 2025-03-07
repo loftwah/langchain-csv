@@ -151,11 +151,24 @@ def setup_qa_chain(retriever, model_name="llama3.2"):
     logger.info(f"✓ QA chain ready")
     return qa_chain
 
-def process_query(qa_chain, query, retriever):
+def process_query(qa_chain, query, retriever, csv_data=None):
     """Process a single query and return results"""
     print(f"\n{Fore.MAGENTA}{'=' * 80}{Style.RESET_ALL}")
     print(f"{Fore.MAGENTA}QUERY: {query}{Style.RESET_ALL}")
     print(f"{Fore.MAGENTA}{'=' * 80}{Style.RESET_ALL}\n")
+    
+    # Special handling for specific query types that require precise numerical analysis
+    query_lower = query.lower()
+    if csv_data is not None and any(term in query_lower for term in ["cheapest", "lowest price", "least expensive"]):
+        print(f"{Fore.YELLOW}[Direct Analysis]{Style.RESET_ALL} Detecting price comparison query - using direct data analysis")
+        
+        if 'price' in csv_data.columns:
+            cheapest_product = csv_data.loc[csv_data['price'].idxmin()]
+            print(f"\n{Fore.CYAN}Direct data analysis results:{Style.RESET_ALL}")
+            print(f"Cheapest product: {Fore.GREEN}{cheapest_product['name']} at ${cheapest_product['price']}{Style.RESET_ALL}")
+            
+            answer = f"The cheapest product is {cheapest_product['name']} at ${cheapest_product['price']}."
+            return answer, [pd.Series.to_frame(cheapest_product)]
     
     # Step 1: Show what documents are retrieved
     print(f"{Fore.YELLOW}[Retrieval Step]{Style.RESET_ALL} Finding relevant documents...")
@@ -188,7 +201,7 @@ def process_query(qa_chain, query, retriever):
     return answer, sources
 
 def main():
-    print_header("CSV-based RAG System Demo")
+    print_header("🚀 INTERACTIVE CSV-based RAG System")
     print("This demo shows how LangChain processes CSV data for question answering.\n")
     
     # Check Ollama server
@@ -200,6 +213,13 @@ def main():
     if not docs:
         return
     
+    # Load raw CSV data for special queries
+    try:
+        csv_data = pd.read_csv("products.csv")
+    except:
+        csv_data = None
+        logger.warning("Could not load raw CSV data for special query handling")
+    
     # Setup vector store and retriever
     vector_store = setup_vector_store(docs)
     retriever = vector_store.as_retriever()
@@ -207,23 +227,105 @@ def main():
     # Setup QA chain
     qa_chain = setup_qa_chain(retriever)
     
-    print_header("Demonstration Queries")
-    print("The following queries will demonstrate the RAG system's capabilities.\n")
+    # Offer choice of demo mode
+    print(f"\n{Fore.CYAN}Choose a demo mode:{Style.RESET_ALL}")
+    print(f"1. {Fore.YELLOW}Sample Queries{Style.RESET_ALL} - See the system answer preset questions")
+    print(f"2. {Fore.YELLOW}Interactive Mode{Style.RESET_ALL} - Ask your own questions")
+    print(f"3. {Fore.YELLOW}Behind the Scenes{Style.RESET_ALL} - See how RAG works with a deep dive")
     
-    # Process sample queries
-    sample_queries = [
-        "What's the cheapest product?",
-        "Which laptop has the best rating?",
-        "What products are made by Apple?"
-    ]
+    choice = input(f"\n{Fore.GREEN}Enter your choice (1-3):{Style.RESET_ALL} ")
     
-    for i, query in enumerate(sample_queries):
-        try:
-            process_query(qa_chain, query, retriever)
-            if i < len(sample_queries) - 1:
-                input(f"\n{Fore.YELLOW}Press Enter to continue to the next query...{Style.RESET_ALL}")
-        except Exception as e:
-            logger.error(f"Error processing query '{query}': {e}")
+    if choice == "1":
+        # Process sample queries
+        print_header("Sample Queries Demonstration")
+        
+        sample_queries = [
+            "What's the cheapest product?",
+            "Which laptop has the best rating?",
+            "What products are made by Apple?",
+            "Tell me about accessories under $50"
+        ]
+        
+        for i, query in enumerate(sample_queries):
+            try:
+                process_query(qa_chain, query, retriever, csv_data)
+                if i < len(sample_queries) - 1:
+                    input(f"\n{Fore.YELLOW}Press Enter to continue to the next query...{Style.RESET_ALL}")
+            except Exception as e:
+                logger.error(f"Error processing query '{query}': {e}")
+    
+    elif choice == "2":
+        # Interactive mode
+        print_header("Interactive Query Mode")
+        print(f"{Fore.CYAN}Ask any question about the product data (type 'exit' to quit):{Style.RESET_ALL}\n")
+        
+        while True:
+            query = input(f"{Fore.GREEN}Your question:{Style.RESET_ALL} ")
+            if query.lower() in ["exit", "quit", "q"]:
+                break
+            
+            try:
+                process_query(qa_chain, query, retriever, csv_data)
+            except Exception as e:
+                logger.error(f"Error processing query: {e}")
+    
+    elif choice == "3":
+        # Behind the scenes demo
+        print_header("Behind the Scenes: How RAG Works")
+        
+        # Educational walkthrough
+        print(f"{Fore.CYAN}This demonstration will show you exactly how RAG processes a question.{Style.RESET_ALL}\n")
+        
+        query = "What's the best laptop?"
+        print(f"{Fore.GREEN}Sample question:{Style.RESET_ALL} {query}\n")
+        
+        # Step 1: Query embedding
+        print(f"{Fore.YELLOW}STEP 1: Converting the question to a vector embedding{Style.RESET_ALL}")
+        print("The system converts your natural language question into a mathematical vector.")
+        embedding_model = OllamaEmbeddings(model="llama3.2")
+        query_embedding = embedding_model.embed_query(query)
+        print(f"Vector dimensions: {len(query_embedding)}")
+        print(f"First 5 values: {query_embedding[:5]}\n")
+        input(f"{Fore.CYAN}Press Enter to continue...{Style.RESET_ALL}")
+        
+        # Step 2: Vector similarity search
+        print(f"\n{Fore.YELLOW}STEP 2: Finding the most similar documents{Style.RESET_ALL}")
+        print("The system compares your query vector with all document vectors to find relevant matches.")
+        relevant_docs = retriever.get_relevant_documents(query)
+        print(f"Found {len(relevant_docs)} relevant documents:\n")
+        for i, doc in enumerate(relevant_docs):
+            print(f"{Fore.WHITE}Document {i+1}:{Style.RESET_ALL}")
+            print(f"{doc.page_content}\n")
+        input(f"{Fore.CYAN}Press Enter to continue...{Style.RESET_ALL}")
+        
+        # Step 3: Prompt construction
+        print(f"\n{Fore.YELLOW}STEP 3: Constructing the prompt for the LLM{Style.RESET_ALL}")
+        print("The system creates a prompt combining your question with the retrieved context:")
+        prompt = f"""Use the following pieces of context to answer the question at the end.
+
+Context:
+"""
+        for doc in relevant_docs:
+            prompt += f"- {doc.page_content}\n"
+        
+        prompt += f"\nQuestion: {query}\nAnswer: "
+        print(f"{Fore.WHITE}{prompt}{Style.RESET_ALL}\n")
+        input(f"{Fore.CYAN}Press Enter to continue...{Style.RESET_ALL}")
+        
+        # Step 4: LLM generation
+        print(f"\n{Fore.YELLOW}STEP 4: Generating the answer with the LLM{Style.RESET_ALL}")
+        print("The LLM generates a natural language answer based on the prompt:")
+        llm = OllamaLLM(model="llama3.2", temperature=0.1)
+        start_time = time.time()
+        answer = llm.invoke(prompt)
+        elapsed_time = time.time() - start_time
+        print(f"{Fore.GREEN}Answer (generated in {elapsed_time:.2f} seconds):{Style.RESET_ALL}")
+        print(f"{answer}\n")
+        
+        print(f"{Fore.CYAN}That's how RAG works! This 4-step process allows the system to answer questions about your data.{Style.RESET_ALL}")
+    
+    else:
+        print(f"{Fore.RED}Invalid choice. Exiting.{Style.RESET_ALL}")
 
 if __name__ == "__main__":
     main()
