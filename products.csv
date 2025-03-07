@@ -1,0 +1,11 @@
+name,price,description,category,brand,rating
+"Laptop Pro",999,"A high-performance laptop with 16 GB RAM and M1 chip.",Laptop,Apple,4.8
+"Wireless Mouse",25,"Ergonomic mouse with long battery life.",Accessory,Logitech,4.2
+"USB-C Hub",45,"Multi-port hub for USB-C devices.",Accessory,Anker,4.5
+"Gaming Keyboard",120,"RGB mechanical keyboard with fast response.",Accessory,Razer,4.7
+"Budget Laptop",499,"Affordable laptop with 8 GB RAM and SSD.",Laptop,HP,4.0
+"Bluetooth Earbuds",79,"True wireless earbuds with noise cancellation.",Accessory,Sony,4.6
+"Monitor 27-inch",299,"4K UHD monitor with slim bezels.",Accessory,LG,4.4
+"Portable SSD",89,"1 TB external SSD with fast read/write speeds.",Accessory,Samsung,4.8
+"Gaming Mouse",65,"High-precision mouse with customizable buttons.",Accessory,Corsair,4.3
+"Travel Charger",35,"Compact 65W USB-C charger.",Accessory,Belkin,4.1
