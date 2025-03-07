@@ -114,7 +114,7 @@ This approach allows you to build sophisticated data query systems that would ot
 
    ```
    # Install with uv
-   uv pip install langchain langchain_community langchain_ollama faiss-cpu
+   uv pip install langchain langchain_community langchain_ollama faiss-cpu colorama gradio pandas
    ```
 
 4. Ensure Ollama is installed and running:
@@ -134,44 +134,72 @@ This approach allows you to build sophisticated data query systems that would ot
 
 ## Usage
 
-1. Prepare your CSV file with the data you want to query.
+### Command Line Demo (rag_demo.py)
 
-2. Run the script:
+The `rag_demo.py` script provides a colorful command-line interface for the RAG system.
+
+1. Run the script:
 
    ```
    uv run rag_demo.py
    ```
 
-3. The script will:
-   - Load the CSV data
-   - Create vector embeddings
+2. The script will:
+   - Verify Ollama server connection and display available models
+   - Load and display the CSV data
+   - Create vector embeddings with visual examples
    - Set up a question-answering chain
-   - Process sample queries
+   - Process sample queries with step-by-step explanations
    - Display the results with source documents
+
+### Web Interface Demo (gradio_demo.py)
+
+The `gradio_demo.py` script provides a user-friendly web interface using Gradio.
+
+1. Run the Gradio web interface:
+
+   ```
+   uv run gradio_demo.py
+   ```
+
+2. Access the web interface in your browser (typically at http://127.0.0.1:7860).
+
+3. Using the interface:
+   - Step 1: Initialize the RAG system by specifying the CSV file path and Ollama model
+   - Step 2: Enter your questions or select from sample questions
+   - View the answers and the source documents used to generate them
 
 ## Customization
 
 ### Using Different Models
 
-To use a different Ollama model, modify the model name in the `setup_vector_store` and `setup_qa_chain` functions:
+To use a different Ollama model, you can:
+
+- In `rag_demo.py`: Modify the model name in the `setup_vector_store` and `setup_qa_chain` functions
+- In `gradio_demo.py`: Select a different model from the dropdown menu
 
 ```python
-# Change from default llama3.2 to another model
+# Example for rag_demo.py
 vector_store = setup_vector_store(docs, model_name="mistral")
 qa_chain = setup_qa_chain(retriever, model_name="mistral")
 ```
 
 ### Different CSV Files
 
-To use a different CSV file, change the file path in the `load_documents` function call:
+To use a different CSV file:
+
+- In `rag_demo.py`: Change the file path in the `load_documents` function call
+- In `gradio_demo.py`: Enter the path to your CSV file in the text field
 
 ```python
+# Example for rag_demo.py
 docs = load_documents("your_data.csv")
 ```
 
 ### Custom Queries
 
-To run your own queries, modify the `sample_queries` list in the `main` function.
+- In `rag_demo.py`: Modify the `sample_queries` list in the `main` function
+- In `gradio_demo.py`: Enter your queries directly in the web interface
 
 ## Troubleshooting
 
@@ -192,7 +220,7 @@ If you encounter a "broken pipe" error from Ollama, try:
    ollama pull tinyllama
    ```
 
-   Then update the model name in the code.
+   Then update the model name in the code or select it from the Gradio dropdown.
 
 3. Check Ollama logs for more details:
    ```
@@ -211,19 +239,19 @@ If you're experiencing memory issues with large CSV files:
 
 ### Interactive Mode
 
-You can modify the script to accept user queries interactively:
+You can modify the `rag_demo.py` script to accept user queries interactively:
 
 ```python
-def interactive_mode(qa_chain):
+def interactive_mode(qa_chain, retriever):
     print("Enter your questions (type 'exit' to quit):")
     while True:
         query = input("> ")
         if query.lower() in ["exit", "quit"]:
             break
-        process_query(qa_chain, query)
+        process_query(qa_chain, query, retriever)
 
 # Add to main function
-interactive_mode(qa_chain)
+interactive_mode(qa_chain, retriever)
 ```
 
 ### API Integration
@@ -249,7 +277,7 @@ class QueryRequest(BaseModel):
 @app.post("/query")
 async def process_user_query(request: QueryRequest):
     try:
-        answer, sources = process_query(qa_chain, request.query)
+        answer, sources = process_query(qa_chain, request.query, retriever)
         return {
             "answer": answer,
             "sources": [
