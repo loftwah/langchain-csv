@@ -152,10 +152,19 @@ def process_query(query):
     except Exception as e:
         return f"Error processing query: {e}", "Error occurred"
 
-# Define the Gradio interface with a top-down flow
-with gr.Blocks(title="CSV RAG System Demo", theme=gr.themes.Soft()) as demo:
-    gr.Markdown("# 🚀 Interactive CSV-based RAG System")
-    gr.Markdown("Ask questions about products in natural language and get AI-powered answers.")
+# Define the Gradio interface with improved layout and dark mode compatibility
+with gr.Blocks(title="CSV RAG Demo", theme=gr.themes.Default()) as demo:
+    # Header with simple title
+    with gr.Row(elem_classes="header"):
+        gr.Markdown("""
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px; padding: 10px; border-radius: 8px;">
+            <div style="font-size: 30px;">📊</div>
+            <div>
+                <h1 style="margin: 0; font-size: 24px;">CSV Analyzer</h1>
+                <p style="margin: 5px 0 0 0;">Ask questions about your data using natural language</p>
+            </div>
+        </div>
+        """)
     
     # System status indicator
     with gr.Row():
@@ -184,63 +193,102 @@ with gr.Blocks(title="CSV RAG System Demo", theme=gr.themes.Soft()) as demo:
                 csv_display = gr.Dataframe(label="CSV Data", visible=True)
         
         with gr.TabItem("❓ Ask Questions"):
-            # Step 2: Ask questions
+            # Improved layout for Q&A section
             gr.Markdown("## Ask Questions About Your Products")
             
-            # Interactive elements
+            # Query input and button in one row
             with gr.Row():
-                with gr.Column(scale=3):
-                    # Query input
-                    query_input = gr.Textbox(
-                        placeholder="Type your question here or select from the samples above", 
-                        label="Your Question",
-                        lines=2
-                    )
-                    
-                    # Query button with icon
-                    query_button = gr.Button("🔍 Ask Question", variant="primary")
+                query_input = gr.Textbox(
+                    placeholder="Type your question here", 
+                    label="Your Question",
+                    lines=2,
+                    scale=4
+                )
+                query_button = gr.Button("🔍 Ask", variant="primary", scale=1)
+            
+            # Sample questions in a horizontal row to save space
+            with gr.Row():
+                gr.Markdown("**Sample Questions:**")
+                
+            with gr.Row():
+                sample_questions = [
+                    "What's the cheapest product?",
+                    "Tell me about electronics products",
+                    "Which laptop has the best rating?"
+                ]
+                
+                for q in sample_questions:
+                    sample_btn = gr.Button(q, size="sm")
+                    sample_btn.click(lambda qst=q: qst, outputs=query_input)
+            
+            # Results in a separate section from conversation history
+            gr.Markdown("### Results")
+            with gr.Row():
+                with gr.Column(scale=2):
+                    # Results section
+                    result_output = gr.Textbox(label="Answer", lines=4)
+                    sources_output = gr.Textbox(label="Sources Used", lines=6)
                 
                 with gr.Column(scale=1):
-                    # Sample questions
-                    gr.Markdown("### Sample Questions")
-                    
-                    sample_questions = [
-                        "What's the cheapest product?",
-                        "Tell me about electronics products",
-                        "Which laptop has the best rating?",
-                        "What products are made by Apple?",
-                        "Which accessories cost less than $50?",
-                        "Compare the gaming products"
-                    ]
-                    
-                    for q in sample_questions:
-                        sample_btn = gr.Button(q)
-                        sample_btn.click(lambda qst=q: qst, outputs=query_input)
-            
-            # Add a chat history for a more conversational feel
-            chat_history = gr.Chatbot(label="Conversation History", height=400)
-            
-            # Results
-            with gr.Accordion("🔍 Answer Details", open=True):
-                result_output = gr.Textbox(label="Answer", lines=4)
-                sources_output = gr.Textbox(label="Sources Used", lines=6)
+                    # Optional chat history in a separate column
+                    gr.Markdown("#### Previous Questions")
+                    chat_history = gr.Textbox(label="", lines=8)
+                    clear_history_btn = gr.Button("Clear History")
     
-    with gr.Accordion("ℹ️ About This Demo", open=False):
+    # Add footer with attribution (simplified)
+    with gr.Row(elem_classes="footer"):
         gr.Markdown("""
-        ## How It Works
-        
-        This system uses **RAG (Retrieval-Augmented Generation)** to answer questions about product data:
-        
-        1. **Vector Embeddings**: The system creates mathematical representations of your product data
-        2. **Semantic Search**: When you ask a question, it finds the most relevant products
-        3. **LLM Generation**: It uses a language model to create a natural language answer
-        
-        ### Known Limitations
-        
-        - For numerical queries (like finding the cheapest item), the system uses direct data analysis to ensure accuracy
-        - Complex multi-step reasoning may sometimes produce incorrect results
-        - The quality of answers depends on the richness of your product data
+        <div style="text-align: center; margin-top: 20px; padding: 10px;">
+            <p style="margin: 0; font-size: 14px;">📦 <b>Powered by LangChain & Ollama</b></p>
+        </div>
         """)
+    
+    # Add custom CSS for better UI with dark mode compatibility
+    gr.Markdown("""
+    <style>
+    .gradio-container {
+        max-width: 90% !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+    
+    /* Dark mode detection */
+    @media (prefers-color-scheme: dark) {
+        body {
+            color-scheme: dark;
+        }
+        
+        .header div, .footer div {
+            background: rgba(30, 30, 30, 0.2) !important;
+            color: #eee !important;
+        }
+        
+        .header h1, .header p {
+            color: #eee !important;
+        }
+    }
+    
+    /* Light mode styles */
+    @media (prefers-color-scheme: light) {
+        .header div {
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+        }
+    }
+    
+    /* General improvements */
+    .tabs > .tab-nav > button {
+        font-size: 1em !important;
+        font-weight: 600 !important;
+    }
+    
+    /* More responsive layout */
+    @media (max-width: 768px) {
+        .gradio-container {
+            max-width: 100% !important;
+        }
+    }
+    </style>
+    """)
     
     # Connect the initialization button
     init_button.click(
@@ -249,31 +297,36 @@ with gr.Blocks(title="CSV RAG System Demo", theme=gr.themes.Soft()) as demo:
         outputs=[status_output, csv_display, system_status]
     )
     
-    # Define a function to handle the conversation
-    def add_to_conversation(query, result, sources):
-        # Add user query to chat
-        chat_history = [[query, None]]
+    # Define a function to update the chat history text (simplified from the chat widget)
+    def update_chat_history(query, result, history):
+        if history is None or history.strip() == "":
+            history = ""
         
-        # Add system response to chat
-        if "Error" in result:
-            chat_history[0][1] = f"❌ {result}"
-        else:
-            # Extract just the answer part without the "processed in X seconds" prefix
-            answer_text = result.split(":\n", 1)[1] if ":\n" in result else result
-            chat_history[0][1] = answer_text
+        # Extract just the answer part without the "processed in X seconds" prefix
+        answer_text = result.split(":\n", 1)[1] if ":\n" in result else result
         
-        return chat_history, result, sources
+        # Add the new Q&A to the history
+        new_history = f"{history}\nQ: {query}\nA: {answer_text}\n{'-'*40}\n"
+        return new_history
     
-    # Connect the query button with updated function
+    # Connect the query button
     query_button.click(
         process_query, 
         inputs=query_input, 
         outputs=[result_output, sources_output]
     ).then(
-        add_to_conversation,
-        inputs=[query_input, result_output, sources_output],
-        outputs=[chat_history, result_output, sources_output]
+        update_chat_history,
+        inputs=[query_input, result_output, chat_history],
+        outputs=chat_history
+    )
+    
+    # Clear history functionality
+    clear_history_btn.click(
+        lambda: "",
+        outputs=chat_history
     )
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(
+        height=700,  # Slightly reduced height
+    )
