@@ -1,11 +1,50 @@
-name,price,description,category,brand,rating
-"Laptop Pro",999,"A high-performance laptop with 16 GB RAM and M1 chip.",Laptop,Apple,4.8
-"Wireless Mouse",25,"Ergonomic mouse with long battery life.",Accessory,Logitech,4.2
-"USB-C Hub",45,"Multi-port hub for USB-C devices.",Accessory,Anker,4.5
-"Gaming Keyboard",120,"RGB mechanical keyboard with fast response.",Accessory,Razer,4.7
-"Budget Laptop",499,"Affordable laptop with 8 GB RAM and SSD.",Laptop,HP,4.0
-"Bluetooth Earbuds",79,"True wireless earbuds with noise cancellation.",Accessory,Sony,4.6
-"Monitor 27-inch",299,"4K UHD monitor with slim bezels.",Accessory,LG,4.4
-"Portable SSD",89,"1 TB external SSD with fast read/write speeds.",Accessory,Samsung,4.8
-"Gaming Mouse",65,"High-precision mouse with customizable buttons.",Accessory,Corsair,4.3
-"Travel Charger",35,"Compact 65W USB-C charger.",Accessory,Belkin,4.1
+name,price,description,category,brand,rating,stock,release_date,discount_percent,features
+"MacBook Pro M3",1799,"Powerful laptop featuring the M3 chip with 16GB RAM, 512GB SSD, and a stunning 14-inch Liquid Retina XDR display with ProMotion technology.",Laptop,Apple,4.9,15,2023-11-07,0,"AI-optimized,Thunderbolt 4,120Hz display"
+"Legion Pro 7i",2299,"Gaming powerhouse with Intel Core i9, 32GB RAM, RTX 4080, and 1TB SSD. Features a 16-inch QHD 240Hz display with G-Sync.",Laptop,Lenovo,4.7,8,2023-06-12,10,"RGB keyboard,Advanced cooling,DLSS 3.0"
+"XPS 13 Plus",1299,"Ultrabook with Intel Core i7, 16GB RAM, and 512GB SSD. Features a 13.4-inch 3.5K OLED touchscreen and a sleek, minimalist design.",Laptop,Dell,4.6,12,2023-02-15,5,"InfinityEdge display,ExpressCharge,Haptic touchpad"
+"Surface Laptop Studio 2",1999,"Versatile 3-in-1 laptop with Intel Core i7, 16GB RAM, RTX 4050, and 512GB SSD. Features a 14.4-inch 120Hz PixelSense touchscreen.",Laptop,Microsoft,4.5,6,2023-10-03,0,"Detachable screen,Surface Pen support,Dolby Atmos"
+"MacBook Air M2",999,"Thin and light laptop with M2 chip, 8GB RAM, and 256GB SSD. Features a 13.6-inch Liquid Retina display and all-day battery life.",Laptop,Apple,4.8,20,2022-07-15,15,"Fanless design,MagSafe charging,1080p webcam"
+"ROG Zephyrus G14",1599,"Compact gaming laptop with Ryzen 9, 16GB RAM, RTX 4060, and 1TB SSD. Features a 14-inch QHD 165Hz display with AMD FreeSync.",Laptop,Asus,4.4,9,2023-04-22,5,"AniMe Matrix display,RGB keyboard,6-speaker system"
+"Chromebook Plus",499,"Budget-friendly laptop with Intel Core i3, 8GB RAM, and 128GB eMMC. Features a 14-inch Full HD touchscreen and ChromeOS.",Laptop,HP,4.0,25,2023-09-30,20,"Google Assistant,Android app support,USI pen compatible"
+"Framework Laptop 13",1049,"Modular and upgradeable laptop with Intel Core i5, 16GB RAM, and 512GB SSD. Features a 13.5-inch 3:2 display and tool-free repair.",Laptop,Framework,4.7,4,2023-07-10,0,"User-replaceable parts,Expansion cards,Privacy switches"
+"MX Master 3S",99,"Premium wireless mouse with an 8K DPI sensor, quiet clicks, and a MagSpeed scroll wheel. Features Bluetooth and USB-C connectivity.",Mouse,Logitech,4.8,30,2022-05-25,10,"Multi-device,Ergonomic design,Smart actions"
+"Basilisk V3 Pro",149,"Wireless gaming mouse with 30K DPI optical sensor, 11 programmable buttons, and customizable RGB lighting. Features HyperSpeed wireless.",Mouse,Razer,4.7,15,2022-08-23,0,"Optical switches,Focus Pro sensor,Wireless charging"
+"Magic Mouse",79,"Wireless mouse with a Multi-Touch surface for gestures. Features a rechargeable battery and seamless compatibility with macOS.",Mouse,Apple,4.2,22,2021-04-20,0,"Multi-Touch surface,Wireless,Rechargeable"
+"G502 X Plus",149,"Flagship gaming mouse with LIGHTSPEED wireless, HERO 25K sensor, and LIGHTSYNC RGB. Features hybrid optical-mechanical switches.",Mouse,Logitech,4.8,10,2022-09-01,15,"Hybrid switches,PowerPlay compatible,Infinite scroll"
+"Pro Click Mini",79,"Compact wireless mouse with 7 programmable buttons and quiet clicks. Features dual wireless connectivity and up to 2-year battery life.",Mouse,Razer,4.3,18,2021-10-05,5,"Multi-host connectivity,Silent clicks,Ergonomic design"
+"DeathAdder V3 Pro",149,"Ultra-lightweight wireless gaming mouse weighing just 63g. Features 30K DPI sensor and up to 90 hours of battery life.",Mouse,Razer,4.7,7,2022-08-11,0,"HyperPolling,Focus Pro sensor,Extreme lightweight"
+"AirPods Pro 2",249,"True wireless earbuds with active noise cancellation, Transparency mode, and spatial audio. Features the H2 chip and MagSafe charging case.",Audio,Apple,4.7,40,2022-09-23,10,"Active noise cancellation,Spatial audio,Adaptive EQ"
+"WH-1000XM5",399,"Premium wireless headphones with industry-leading noise cancellation, 30-hour battery life, and high-resolution audio.",Audio,Sony,4.9,25,2022-05-12,15,"LDAC codec,8 microphones,Auto NC Optimizer"
+"QuietComfort Ultra",379,"Wireless noise-cancelling headphones with immersive audio, up to 24 hours of battery life, and CustomTune technology.",Audio,Bose,4.8,15,2023-10-15,0,"Spatial audio,Aware Mode,Multi-point connection"
+"HD 660S",499,"Open-back audiophile headphones with 150-ohm impedance, handcrafted in Germany. Features a detachable cable and velour ear pads.",Audio,Sennheiser,4.9,8,2021-02-08,5,"Reference-class,Natural sound stage,Low harmonic distortion"
+"Galaxy Buds 2 Pro",229,"True wireless earbuds with intelligent active noise cancellation, 24-bit Hi-Fi sound, and Voice Detect technology.",Audio,Samsung,4.6,35,2022-08-26,20,"360 Audio,IPX7 water resistance,Auto switch"
+"QuietComfort Earbuds II",299,"Wireless earbuds with personalized noise cancellation, Aware Mode, and up to 6 hours of battery life.",Audio,Bose,4.7,12,2022-09-15,10,"CustomTune technology,Fit Kit,Weather resistant"
+"Momentum 4",349,"Wireless headphones with 60-hour battery life, adaptive noise cancellation, and high-fidelity sound with aptX Adaptive.",Audio,Sennheiser,4.8,10,2022-08-09,5,"Transparent Hearing,Smart Control app,Foldable design"
+"Studio Display",1599,"27-inch 5K Retina display with P3 wide color gamut and True Tone technology. Features a 12MP Ultra Wide camera and six speakers.",Monitor,Apple,4.5,5,2022-03-18,0,"5K resolution,Center Stage camera,Spatial Audio"
+"Odyssey G9",1299,"49-inch super ultra-wide curved gaming monitor with Dual QHD resolution, 240Hz refresh rate, and 1ms response time.",Monitor,Samsung,4.7,8,2023-02-21,10,"1000R curvature,Quantum Mini-LED,G-Sync compatible"
+"UltraSharp U3223QE",1099,"32-inch 4K IPS Black monitor with USB-C hub functionality, 98% DCI-P3 color coverage, and built-in KVM switch.",Monitor,Dell,4.6,12,2022-03-29,15,"IPS Black technology,USB-C hub,Picture-by-Picture"
+"ProArt PA32UCG-K",4999,"32-inch 4K HDR monitor with Mini LED backlighting, 120Hz refresh rate, and professional-grade color accuracy.",Monitor,Asus,4.9,2,2022-05-10,0,"Mini LED,Thunderbolt 4,HDR 1400"
+"Spectre x360",1499,"Premium 2-in-1 laptop with Intel Core i7, 16GB RAM, and 1TB SSD. Features a 13.5-inch 3K2K OLED touchscreen and gem-cut design.",Laptop,HP,4.7,8,2023-01-14,5,"360-degree hinge,OLED display,Thunderbolt 4"
+"ThinkPad X1 Carbon",1699,"Business laptop with Intel Core i7, 16GB RAM, and 512GB SSD. Features a 14-inch WUXGA display and legendary ThinkPad keyboard.",Laptop,Lenovo,4.8,15,2023-02-28,10,"Military-grade durability,Rapid Charge,ThinkShield security"
+"Magic Keyboard",149,"Wireless keyboard with numeric keypad, scissor mechanism, and Touch ID. Features a built-in rechargeable battery.",Keyboard,Apple,4.5,25,2021-04-20,0,"Touch ID,Wireless,Extended layout"
+"G915 TKL",229,"Low-profile wireless mechanical gaming keyboard with LIGHTSPEED technology, GL switches, and per-key RGB lighting.",Keyboard,Logitech,4.7,15,2021-05-25,10,"Low-profile switches,Aircraft-grade aluminum,Dedicated media controls"
+"Huntsman V2",199,"Optical gaming keyboard with Gen-2 Optical Switches, sound dampening foam, and Doubleshot PBT keycaps.",Keyboard,Razer,4.8,10,2022-02-11,5,"Optical switches,8000Hz polling,Sound dampening"
+"K860",129,"Ergonomic wireless keyboard with curved design, wrist rest, and multi-device connectivity. Features quiet, comfortable typing.",Keyboard,Logitech,4.4,20,2020-10-15,15,"Ergonomic split design,Palm lift,Multi-device"
+"Stream Deck MK.2",149,"Customizable LCD key controller with 15 programmable LCD keys for streamers and content creators.",Keyboard,Elgato,4.7,12,2022-07-15,0,"LCD keys,Interchangeable faceplates,Stream control"
+"T3 Portable SSD",229,"Portable SSD with 2TB storage, read speeds up to 1,050MB/s, and a compact, shock-resistant metal design.",Storage,Samsung,4.8,35,2022-04-15,20,"USB 3.2 Gen 2,Password protection,Shock resistant"
+"Crucial X9 Pro",179,"Rugged portable SSD with 1TB storage, 1,050MB/s speeds, and drop resistance. Features USB-C connectivity.",Storage,Crucial,4.5,18,2023-06-10,5,"IP55 rating,Compact design,USB-C"
+"Thunderbolt 4 Dock",349,"Professional docking station with 11 ports including Thunderbolt 4, HDMI, DisplayPort, and Gigabit Ethernet.",Accessory,CalDigit,4.9,9,2023-01-20,0,"11 ports,96W charging,Dual 4K support"
+"Stream Deck+",199,"Advanced stream controller with 8 LCD keys, 4 tactile knobs, and a dynamic touchscreen for multitasking and control.",Accessory,Elgato,4.7,10,2022-11-17,0,"Tactile knobs,Touchscreen,Audio mixing"
+"PowerCore 26800",69,"High-capacity power bank with 26,800mAh capacity, 60W PD fast charging, and three USB ports for simultaneous charging.",Accessory,Anker,4.6,45,2022-08-05,15,"60W PD,Triple output,Trickle charging mode"
+"Magic Trackpad",129,"Multi-Touch trackpad with Force Touch technology, edge-to-edge glass surface, and wireless connectivity.",Input,Apple,4.6,22,2021-04-20,0,"Force Touch,Multi-Touch gestures,USB-C rechargeable"
+"MX Vertical",99,"Advanced ergonomic mouse with 57° vertical design, 4000 DPI sensor, and multi-device connectivity.",Mouse,Logitech,4.4,15,2021-09-14,10,"Ergonomic design,Multi-device,Natural handshake position"
+"QuietComfort 45",329,"Wireless noise-cancelling headphones with up to 24 hours of battery life and Aware Mode for environmental awareness.",Audio,Bose,4.7,20,2021-08-31,20,"TriPort acoustic architecture,Adjustable EQ,Aware Mode"
+"AirTag (4 Pack)",99,"Precision finding accessories that use the Find My network to help locate your items. Features user-replaceable battery.",Accessory,Apple,4.5,50,2021-04-30,0,"Ultra Wideband,Find My network,Water resistant"
+"Galaxy Watch6 Classic",399,"Premium smartwatch with rotating bezel, advanced health tracking, and Wear OS. Features a Super AMOLED display and 5ATM water resistance.",Wearable,Samsung,4.6,15,2023-07-26,5,"BioActive sensor,Sapphire glass,Advanced sleep coaching"
+"Ultra 2",799,"Rugged smartwatch with precision dual-frequency GPS, Action button, and up to 36 hours of battery life. Features a titanium case.",Wearable,Apple,4.8,10,2023-09-22,0,"Dual-frequency GPS,Depth gauge,Customizable Action button"
+"Surface Dial",99,"Rotational input device that works with Surface devices for precise creative control. Features haptic feedback.",Input,Microsoft,4.3,8,2019-10-02,15,"Haptic feedback,Contextual menus,Off-screen interaction"
+"ROG Ally",699,"Handheld gaming PC with AMD Ryzen Z1 Extreme, 16GB RAM, and 512GB SSD. Features a 7-inch 120Hz Full HD touchscreen.",Gaming,Asus,4.5,5,2023-06-13,0,"Windows 11,ROG Armoury Crate,Customizable controls"
+"C1 OLED 55\"",1299,"55-inch 4K OLED TV with a 120Hz refresh rate, G-Sync/FreeSync, and four HDMI 2.1 ports. Perfect for both movies and gaming.",TV,LG,4.9,7,2022-03-15,25,"OLED evo,4K 120Hz,G-Sync compatible"
+"Inspiration 7700",999,"All-in-one desktop with Intel Core i7, 16GB RAM, and 512GB SSD. Features a 27-inch 4K touchscreen and pop-up webcam.",Desktop,Dell,4.2,6,2023-03-10,10,"Pop-up webcam,4K touchscreen,Wireless charging base"
+"Go 3",399,"Ultra-portable 2-in-1 tablet with Intel Pentium Gold, 8GB RAM, and 128GB eMMC storage. Features a 10.5-inch PixelSense display.",Tablet,Microsoft,4.1,12,2021-09-22,20,"Detachable keyboard,Surface Pen support,All-day battery"
+"iPad Pro 12.9",1099,"Powerful tablet with M2 chip, 12.9-inch Liquid Retina XDR display, and 128GB storage. Features ProMotion technology and Face ID.",Tablet,Apple,4.8,18,2022-10-18,5,"Mini-LED display,Apple Pencil support,Thunderbolt port"
