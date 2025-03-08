@@ -25,7 +25,7 @@ from langchain_community.vectorstores import Chroma
 from pydantic import BaseModel, Field
 
 # Local imports
-from .api import get_players, get_player_stats, get_player_games, get_league_leaders
+from .api import get_players, get_player_stats, get_player_games, get_league_leaders, get_player_id
 from .fantasy import calculate_fantasy_points, calculate_consistency
 
 # Initialize Ollama with Llama 3.2
@@ -487,12 +487,11 @@ class NBAFantasyAssistant:
             
             # Process LLM response
             try:
-                # Try to parse as JSON
-                result = json.loads(response)
-                return result
+                # The response is plain text, not JSON
+                return response
             except Exception as e:
                 print(f"Error parsing matchup analysis response: {e}")
-                return {"error": f"Failed to analyze matchup: {str(e)}"}
+                return f"Failed to analyze matchup: {str(e)}"
         
         except Exception as e:
             print(f"Error in matchup analysis: {e}")
