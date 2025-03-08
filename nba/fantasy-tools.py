@@ -79,9 +79,13 @@ def get_player_stats(season="2023-24", min_games=20):
     try:
         stats = leaguedashplayerstats.LeagueDashPlayerStats(
             season=season,
-            per_mode_simple='PerGame',
+            per_mode_detailed='PerGame',
+            measure_type_detailed_defense='Base',
             season_type_all_star='Regular Season',
-            measure_type_simple='Base'
+            pace_adjust='N',
+            plus_minus='N',
+            rank='N',
+            last_n_games=0
         )
         stats_df = stats.get_data_frames()[0]
         
