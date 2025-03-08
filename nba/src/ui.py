@@ -7,13 +7,32 @@ def create_interface():
     """Create the Gradio web interface for the Fantasy Basketball Tools"""
     
     with gr.Blocks(title="Loftwah's Fantasy Basketball Tools", css=CUSTOM_CSS) as demo:
+        # Enhanced header with banner and description
         gr.HTML("""
-        <div style="text-align: center; margin-bottom: 20px;">
-            <h1 style="color: #F7B801; font-size: 36px; margin-bottom: 5px;">🏀 Loftwah's Fantasy Basketball Assistant</h1>
-            <p style="font-size: 18px;">Professional analytics to dominate your fantasy basketball league</p>
-            <a href="https://linkarooie.com/loftwah" target="_blank" style="color: #F7B801; font-size: 14px;">
-                Visit Loftwah's Website
-            </a>
+        <div style="text-align: center; max-width: 100%; overflow: hidden; margin-bottom: 30px; background: linear-gradient(90deg, #17408B, #C9082A); padding: 30px 0; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+            <h1 style="color: #FFFFFF; font-size: 42px; margin-bottom: 15px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">🏀 Fantasy Basketball Assistant</h1>
+            <p style="font-size: 18px; color: #FFFFFF; margin-bottom: 20px; max-width: 800px; margin-left: auto; margin-right: auto;">
+                Professional analytics to dominate your fantasy basketball league using official NBA data
+            </p>
+            <div style="display: flex; justify-content: center; gap: 20px; margin-top: 15px;">
+                <div style="background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 8px; backdrop-filter: blur(5px);">
+                    <h3 style="color: #F7B801; margin: 0;">Data-Driven Drafting</h3>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 8px; backdrop-filter: blur(5px);">
+                    <h3 style="color: #F7B801; margin: 0;">Matchup Analysis</h3>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); padding: 10px 20px; border-radius: 8px; backdrop-filter: blur(5px);">
+                    <h3 style="color: #F7B801; margin: 0;">Player Consistency</h3>
+                </div>
+            </div>
+            <p style="margin-top: 20px; font-size: 14px; color: #FFFFFF;">
+                <a href="https://linkarooie.com/loftwah" target="_blank" style="color: #F7B801; text-decoration: underline;">
+                    Visit Author's Website
+                </a> | 
+                <a href="https://github.com/loftwah/langchain-csv" target="_blank" style="color: #F7B801; text-decoration: underline;">
+                    GitHub Repository
+                </a>
+            </p>
         </div>
         """)
         

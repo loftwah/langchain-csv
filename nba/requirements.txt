@@ -1,0 +1,18 @@
+# Core dependencies
+nba_api==1.3.1
+pandas==2.1.1
+numpy==1.26.0
+
+# Visualization
+matplotlib==3.8.0
+seaborn==0.13.0
+
+# Web interface
+gradio==4.12.0
+
+# Performance
+cachetools==5.3.1
+lru-dict==1.2.0
+
+# Optional - for faster processing
+polars==0.19.12 

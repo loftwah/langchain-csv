@@ -1,5 +1,9 @@
 import pandas as pd
+import os
+import json
+import time
 from functools import lru_cache
+from pathlib import Path
 
 # NBA API imports - using only confirmed endpoints
 from nba_api.stats.static import players
@@ -12,11 +16,50 @@ from nba_api.stats.endpoints import (
     playercareerstats
 )
 
-from .config import DEFAULT_SEASON
+from .config import DEFAULT_SEASON, CACHE_DIR
+
+# Set up offline mode - will use cached data if True
+OFFLINE_MODE = os.environ.get("NBA_OFFLINE_MODE", "0").lower() in ("1", "true", "yes")
+
+def save_to_cache(data, cache_file):
+    """Save data to cache file"""
+    cache_path = Path(CACHE_DIR) / cache_file
+    
+    if isinstance(data, pd.DataFrame):
+        data.to_csv(cache_path, index=False)
+    else:
+        with open(cache_path, 'w') as f:
+            json.dump(data, f)
+    
+    print(f"Data saved to cache: {cache_file}")
+
+def load_from_cache(cache_file, as_dataframe=True):
+    """Load data from cache file"""
+    cache_path = Path(CACHE_DIR) / cache_file
+    
+    if not cache_path.exists():
+        return None
+    
+    try:
+        if as_dataframe:
+            return pd.read_csv(cache_path)
+        else:
+            with open(cache_path, 'r') as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"Error loading from cache {cache_file}: {e}")
+        return None
 
 @lru_cache(maxsize=32)
 def get_players():
     """Get all NBA players from static data or API"""
+    # Try to load from cache first if in offline mode
+    if OFFLINE_MODE:
+        cached_data = load_from_cache("all_players.csv")
+        if cached_data is not None:
+            print("Using cached player data (offline mode)")
+            return cached_data
+    
     try:
         # Try static data first (faster)
         all_players = players.get_players()
@@ -27,6 +70,9 @@ def get_players():
                 df['DISPLAY_FIRST_LAST'] = df['full_name']
             if 'id' in df.columns and 'PERSON_ID' not in df.columns:
                 df['PERSON_ID'] = df['id']
+            
+            # Save to cache for offline use
+            save_to_cache(df, "all_players.csv")
             return df
     except Exception as e:
         print(f"Error retrieving players from static data: {e}")
@@ -34,9 +80,18 @@ def get_players():
     # Fall back to API
     try:
         all_players_df = commonallplayers.CommonAllPlayers().get_data_frames()[0]
+        # Save to cache for offline use
+        save_to_cache(all_players_df, "all_players.csv")
         return all_players_df
     except Exception as e:
         print(f"Error retrieving players from API: {e}")
+        
+        # Last resort - try to load from cache even if not in offline mode
+        cached_data = load_from_cache("all_players.csv")
+        if cached_data is not None:
+            print("API call failed. Using cached player data as fallback.")
+            return cached_data
+            
         return pd.DataFrame(columns=['PERSON_ID', 'DISPLAY_FIRST_LAST'])
 
 def get_player_id(player_name):
