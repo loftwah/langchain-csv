@@ -1,7 +1,7 @@
 import gradio as gr
 
 from .config import CUSTOM_CSS
-from .tools import draft_helper, matchup_analyzer, consistency_tracker
+from .tools import draft_helper, matchup_analyzer, consistency_tracker, game_simulator
 
 def create_interface():
     """Create the Gradio web interface for the Fantasy Basketball Tools"""
@@ -118,6 +118,138 @@ def create_interface():
                         fn=matchup_analyzer,
                         inputs=[team1, team2, matchup_scoring],
                         outputs=[matchup_result, matchup_plot]
+                    )
+            
+            # Game Simulator Tab
+            with gr.Tab("🎮 Game Simulator"):
+                with gr.Group(elem_classes=["content-block"]):
+                    gr.Markdown("## NBA Game Simulator")
+                    gr.Markdown("Simulate a full NBA basketball game with your favorite players and watch the play-by-play action!")
+                    
+                    with gr.Row():
+                        with gr.Column(scale=1):
+                            gr.Markdown("### Team Setup")
+                            
+                            team1_name = gr.Textbox(
+                                label="Team 1 Name",
+                                value="Dream Team",
+                                placeholder="Enter a name for Team 1"
+                            )
+                            
+                            team1_players = gr.Textbox(
+                                label="Team 1 Players (comma-separated)",
+                                placeholder="e.g., LeBron James, Stephen Curry, Nikola Jokic",
+                                lines=3
+                            )
+                            
+                            team2_name = gr.Textbox(
+                                label="Team 2 Name",
+                                value="All-Stars",
+                                placeholder="Enter a name for Team 2"
+                            )
+                            
+                            team2_players = gr.Textbox(
+                                label="Team 2 Players (comma-separated)",
+                                placeholder="e.g., Giannis Antetokounmpo, Kevin Durant, Joel Embiid",
+                                lines=3
+                            )
+                            
+                            gr.Markdown("### Game Settings")
+                            
+                            with gr.Row():
+                                quarters = gr.Slider(
+                                    minimum=1, maximum=4, value=4, step=1,
+                                    label="Number of Quarters"
+                                )
+                                
+                                quarter_length = gr.Slider(
+                                    minimum=6, maximum=12, value=12, step=1,
+                                    label="Quarter Length (minutes)"
+                                )
+                            
+                            # Game presets for fun combinations
+                            gr.Markdown("### Quick Team Presets")
+                            
+                            with gr.Row():
+                                preset_goats = gr.Button("🐐 All-Time Greats")
+                                preset_current = gr.Button("🔥 Today's Superstars")
+                                preset_shooters = gr.Button("🎯 3-Point Specialists")
+                                
+                            with gr.Row():
+                                preset_defenders = gr.Button("🛡️ Defensive Stoppers")
+                                preset_bigmen = gr.Button("🏔️ Dominant Big Men")
+                                preset_playmakers = gr.Button("👀 Elite Playmakers")
+                            
+                            simulate_btn = gr.Button("Simulate Game!", variant="primary")
+                            
+                        with gr.Column(scale=1):
+                            # Game visualization
+                            game_plot = gr.Plot(label="Game Stats", elem_classes=["plot-container"])
+                    
+                    # Play-by-play results
+                    play_by_play = gr.Markdown(label="Play-by-Play")
+                    
+                    # Preset functions
+                    def load_preset_goats():
+                        return {
+                            team1_players: "Michael Jordan, LeBron James, Kobe Bryant, Magic Johnson, Kareem Abdul-Jabbar",
+                            team2_players: "Larry Bird, Wilt Chamberlain, Shaquille O'Neal, Hakeem Olajuwon, Bill Russell",
+                            team1_name: "GOAT Squad",
+                            team2_name: "Legends"
+                        }
+                    
+                    def load_preset_current():
+                        return {
+                            team1_players: "Giannis Antetokounmpo, Nikola Jokic, LeBron James, Stephen Curry, Kevin Durant",
+                            team2_players: "Joel Embiid, Luka Doncic, Jayson Tatum, Damian Lillard, Anthony Davis",
+                            team1_name: "Current Elites",
+                            team2_name: "Rising Stars"
+                        }
+                    
+                    def load_preset_shooters():
+                        return {
+                            team1_players: "Stephen Curry, Klay Thompson, Ray Allen, Reggie Miller, Kyle Korver",
+                            team2_players: "Damian Lillard, Trae Young, Duncan Robinson, Buddy Hield, Davis Bertans",
+                            team1_name: "Splash Brothers & Co.",
+                            team2_name: "New Wave Snipers"
+                        }
+                    
+                    def load_preset_defenders():
+                        return {
+                            team1_players: "Kawhi Leonard, Rudy Gobert, Draymond Green, Ben Wallace, Gary Payton",
+                            team2_players: "Tony Allen, Dikembe Mutombo, Dennis Rodman, Marcus Smart, Jrue Holiday",
+                            team1_name: "The Wall",
+                            team2_name: "No Entry"
+                        }
+                    
+                    def load_preset_bigmen():
+                        return {
+                            team1_players: "Shaquille O'Neal, Hakeem Olajuwon, Kareem Abdul-Jabbar, Tim Duncan, David Robinson",
+                            team2_players: "Nikola Jokic, Joel Embiid, Anthony Davis, Karl-Anthony Towns, DeMarcus Cousins",
+                            team1_name: "Classic Towers",
+                            team2_name: "Modern Bigs"
+                        }
+                    
+                    def load_preset_playmakers():
+                        return {
+                            team1_players: "Magic Johnson, John Stockton, Chris Paul, Jason Kidd, Steve Nash",
+                            team2_players: "Luka Doncic, Nikola Jokic, LeBron James, James Harden, Trae Young",
+                            team1_name: "Pass First",
+                            team2_name: "Point Gods"
+                        }
+                    
+                    preset_goats.click(load_preset_goats, outputs=[team1_players, team2_players, team1_name, team2_name])
+                    preset_current.click(load_preset_current, outputs=[team1_players, team2_players, team1_name, team2_name])
+                    preset_shooters.click(load_preset_shooters, outputs=[team1_players, team2_players, team1_name, team2_name])
+                    preset_defenders.click(load_preset_defenders, outputs=[team1_players, team2_players, team1_name, team2_name])
+                    preset_bigmen.click(load_preset_bigmen, outputs=[team1_players, team2_players, team1_name, team2_name])
+                    preset_playmakers.click(load_preset_playmakers, outputs=[team1_players, team2_players, team1_name, team2_name])
+                    
+                    # Connect the simulate button
+                    simulate_btn.click(
+                        game_simulator,
+                        inputs=[team1_players, team2_players, team1_name, team2_name, quarters, quarter_length],
+                        outputs=[play_by_play, game_plot]
                     )
             
             # Consistency Tracker Tab

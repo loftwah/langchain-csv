@@ -489,3 +489,519 @@ def consistency_tracker(player_name, num_games=10, scoring_system='standard'):
     
     else:
         return f"Insufficient game data for {player_name}", fig 
+
+def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name="Team 2", quarters=4, quarter_length=12):
+    """
+    Simulate a full basketball game between two teams of NBA players.
+    
+    Args:
+        team1_players (str): Comma-separated list of players on team 1
+        team2_players (str): Comma-separated list of players on team 2
+        team1_name (str): Name for team 1
+        team2_name (str): Name for team 2
+        quarters (int): Number of quarters to play
+        quarter_length (int): Length of each quarter in minutes
+        
+    Returns:
+        tuple: (play_by_play_text, stats_visualization)
+    """
+    # Process team players
+    team1_stats = []
+    team2_stats = []
+    
+    # Process team1 players
+    for player in team1_players.split(','):
+        player = player.strip()
+        if not player:
+            continue
+            
+        player_id = get_player_id(player)
+        if player_id:
+            # Get recent games
+            recent_games = get_player_games(player_id)
+            
+            if not recent_games.empty:
+                # Calculate average stats
+                avg_stats = recent_games.mean(numeric_only=True)
+                avg_stats['PLAYER_NAME'] = player
+                team1_stats.append(avg_stats)
+    
+    # Process team2 players
+    for player in team2_players.split(','):
+        player = player.strip()
+        if not player:
+            continue
+            
+        player_id = get_player_id(player)
+        if player_id:
+            # Get recent games
+            recent_games = get_player_games(player_id)
+            
+            if not recent_games.empty:
+                # Calculate average stats
+                avg_stats = recent_games.mean(numeric_only=True)
+                avg_stats['PLAYER_NAME'] = player
+                team2_stats.append(avg_stats)
+    
+    # Convert to DataFrames
+    team1_df = pd.DataFrame(team1_stats) if team1_stats else pd.DataFrame()
+    team2_df = pd.DataFrame(team2_stats) if team2_stats else pd.DataFrame()
+    
+    if team1_df.empty or team2_df.empty:
+        return "Could not find enough player data. Check player names and try again.", None
+    
+    # Initialize game variables
+    team1_score = 0
+    team2_score = 0
+    play_by_play = []
+    
+    # Player stats for the simulated game
+    team1_game_stats = {player: {
+        'PTS': 0, 'REB': 0, 'AST': 0, 'STL': 0, 'BLK': 0, 
+        'FG': 0, 'FGA': 0, 'FG3': 0, 'FG3A': 0, 'FT': 0, 'FTA': 0, 'TO': 0
+    } for player in team1_df['PLAYER_NAME']}
+    
+    team2_game_stats = {player: {
+        'PTS': 0, 'REB': 0, 'AST': 0, 'STL': 0, 'BLK': 0, 
+        'FG': 0, 'FGA': 0, 'FG3': 0, 'FG3A': 0, 'FT': 0, 'FTA': 0, 'TO': 0
+    } for player in team2_df['PLAYER_NAME']}
+    
+    # Calculate team offensive and defensive ratings
+    team1_off_rtg = team1_df['PTS'].sum() / len(team1_df)
+    team2_off_rtg = team2_df['PTS'].sum() / len(team2_df)
+    
+    team1_def_rtg = team1_df['STL'].sum() + team1_df['BLK'].sum()
+    team2_def_rtg = team2_df['STL'].sum() + team2_df['BLK'].sum()
+    
+    # Possession variables
+    team1_possessions = []
+    team2_possessions = []
+    
+    # Add game intro
+    play_by_play.append(f"# 🏀 {team1_name} vs {team2_name} - GAME SIMULATION")
+    play_by_play.append(f"\n## Starting Lineups")
+    play_by_play.append(f"\n### {team1_name}:")
+    play_by_play.append(", ".join(team1_df['PLAYER_NAME'].tolist()))
+    play_by_play.append(f"\n### {team2_name}:")
+    play_by_play.append(", ".join(team2_df['PLAYER_NAME'].tolist()))
+    play_by_play.append("\n---\n")
+    
+    # Simulate each quarter
+    for quarter in range(1, quarters + 1):
+        play_by_play.append(f"\n## Quarter {quarter}")
+        
+        # Calculate possessions for the quarter (random but based on team pace)
+        possessions = int(quarter_length * 2.2)  # ~2.2 possessions per minute
+        
+        for poss in range(possessions):
+            # Alternate possessions, with slight randomness
+            if np.random.random() < 0.5:
+                # Team 1 has possession
+                offensive_team = team1_name
+                defensive_team = team2_name
+                off_players = team1_df['PLAYER_NAME'].tolist()
+                def_players = team2_df['PLAYER_NAME'].tolist()
+                off_ratings = team1_df
+                def_ratings = team2_df
+                game_stats = team1_game_stats
+            else:
+                # Team 2 has possession
+                offensive_team = team2_name
+                defensive_team = team1_name
+                off_players = team2_df['PLAYER_NAME'].tolist()
+                def_players = team1_df['PLAYER_NAME'].tolist()
+                off_ratings = team2_df
+                def_ratings = team1_df
+                game_stats = team2_game_stats
+            
+            # Select players involved in this play
+            primary_player = np.random.choice(off_players, p=normalize_stats(off_ratings, 'PTS'))
+            
+            # Get player's actual efficiency stats
+            player_idx = off_ratings[off_ratings['PLAYER_NAME'] == primary_player].index[0]
+            fg_pct = off_ratings.loc[player_idx, 'FG_PCT'] if 'FG_PCT' in off_ratings.columns else 0.45
+            fg3_pct = off_ratings.loc[player_idx, 'FG3_PCT'] if 'FG3_PCT' in off_ratings.columns else 0.35
+            
+            # Determine play type
+            play_types = ['three_point', 'mid_range', 'layup', 'dunk', 'pass', 'turnover']
+            play_probs = [0.25, 0.25, 0.25, 0.1, 0.1, 0.05]  # Default probabilities
+            
+            # Adjust probabilities based on player stats
+            if 'FG3M' in off_ratings.columns:
+                three_tendency = off_ratings.loc[player_idx, 'FG3M'] / off_ratings.loc[player_idx, 'PTS'] * 3
+                play_probs[0] = max(0.1, min(0.4, three_tendency * 0.8))
+            
+            play_probs = [p/sum(play_probs) for p in play_probs]  # Normalize probabilities
+            play_type = np.random.choice(play_types, p=play_probs)
+            
+            # Initialize play result
+            points_scored = 0
+            play_text = ""
+            
+            # Handle different play types
+            if play_type == 'turnover':
+                # Turnover
+                defender = np.random.choice(def_players)
+                turnover_types = [
+                    f"{primary_player} loses the ball out of bounds!",
+                    f"{defender} strips {primary_player} for the steal!",
+                    f"{primary_player} throws a pass that's intercepted by {defender}!",
+                    f"{primary_player} called for an offensive foul, turnover!"
+                ]
+                play_text = np.random.choice(turnover_types)
+                
+                # Update stats
+                game_stats[primary_player]['TO'] += 1
+                
+            elif play_type == 'pass':
+                # Assist to another player
+                receivers = [p for p in off_players if p != primary_player]
+                if receivers:
+                    receiver = np.random.choice(receivers)
+                    
+                    # Determine shot type
+                    if np.random.random() < 0.3:  # 30% chance of three pointer
+                        success_prob = fg3_pct - 0.05  # Slightly harder than player's avg
+                        
+                        if np.random.random() < success_prob:
+                            points_scored = 3
+                            play_text = f"{primary_player} finds {receiver} behind the arc... BANG! A beautiful three-pointer!"
+                            
+                            # Update stats
+                            game_stats[receiver]['PTS'] += 3
+                            game_stats[receiver]['FG'] += 1
+                            game_stats[receiver]['FGA'] += 1
+                            game_stats[receiver]['FG3'] += 1
+                            game_stats[receiver]['FG3A'] += 1
+                            game_stats[primary_player]['AST'] += 1
+                        else:
+                            play_text = f"{primary_player} kicks it out to {receiver} for three... but it rims out!"
+                            
+                            # Update stats
+                            game_stats[receiver]['FGA'] += 1
+                            game_stats[receiver]['FG3A'] += 1
+                            
+                            # 25% chance of offensive rebound
+                            if np.random.random() < 0.25:
+                                rebounder = np.random.choice(off_players)
+                                play_text += f" {rebounder} gets the offensive rebound!"
+                                game_stats[rebounder]['REB'] += 1
+                            else:
+                                rebounder = np.random.choice(def_players)
+                                play_text += f" {rebounder} secures the defensive rebound."
+                    else:
+                        # Two pointer after pass
+                        success_prob = fg_pct
+                        
+                        if np.random.random() < success_prob:
+                            points_scored = 2
+                            play_text = f"{primary_player} with a perfect pass to {receiver} who scores!"
+                            
+                            # Update stats
+                            game_stats[receiver]['PTS'] += 2
+                            game_stats[receiver]['FG'] += 1
+                            game_stats[receiver]['FGA'] += 1
+                            game_stats[primary_player]['AST'] += 1
+                        else:
+                            play_text = f"{primary_player} passes to {receiver} who misses the shot!"
+                            
+                            # Update stats
+                            game_stats[receiver]['FGA'] += 1
+                            
+                            # Handle rebound
+                            if np.random.random() < 0.25:
+                                rebounder = np.random.choice(off_players)
+                                play_text += f" {rebounder} grabs the offensive board!"
+                                game_stats[rebounder]['REB'] += 1
+                            else:
+                                rebounder = np.random.choice(def_players)
+                                play_text += f" Rebound {defensive_team}, {rebounder}."
+                                # No need to update defensive team stats
+            
+            else:  # Direct shot attempts
+                defender = np.random.choice(def_players)
+                
+                # Base success probability for different shots
+                success_probs = {
+                    'three_point': fg3_pct,
+                    'mid_range': fg_pct + 0.05,  # Easier than average FG
+                    'layup': fg_pct + 0.15,      # Quite high success rate
+                    'dunk': 0.85                 # Very high success rate
+                }
+                
+                # Defender adjustment
+                def_idx = def_ratings[def_ratings['PLAYER_NAME'] == defender].index[0]
+                def_impact = def_ratings.loc[def_idx, 'BLK'] * 0.02 if 'BLK' in def_ratings.columns else 0
+                
+                # Shot is blocked?
+                is_blocked = np.random.random() < def_impact
+                
+                if is_blocked:
+                    play_text = f"{primary_player} drives to the basket... BLOCKED by {defender}!"
+                    # Update stats
+                    game_stats[primary_player]['FGA'] += 1
+                    # No FG3A update needed here as blocks typically happen inside
+                    
+                    # Handle rebound after block
+                    if np.random.random() < 0.6:  # Defense more likely to get rebound after block
+                        rebounder = np.random.choice(def_players)
+                        play_text += f" {rebounder} recovers the ball."
+                    else:
+                        rebounder = np.random.choice(off_players)
+                        play_text += f" But {rebounder} gets the loose ball!"
+                        game_stats[rebounder]['REB'] += 1
+                
+                else:  # Not blocked
+                    # Calculate final success probability
+                    success_prob = success_probs[play_type] - (def_impact / 2)
+                    
+                    # Shot descriptions
+                    shot_descriptions = {
+                        'three_point': [
+                            f"{primary_player} pulls up from deep...",
+                            f"{primary_player} gets space behind the arc...",
+                            f"{primary_player} with the step-back three...",
+                            f"The ball swings to {primary_player} at the corner..."
+                        ],
+                        'mid_range': [
+                            f"{primary_player} with the elbow jumper...",
+                            f"{primary_player} pulls up from 15 feet...",
+                            f"{primary_player} with the fadeaway..."
+                        ],
+                        'layup': [
+                            f"{primary_player} drives past {defender}...",
+                            f"{primary_player} finds a lane to the basket...",
+                            f"{primary_player} with a spin move into the paint..."
+                        ],
+                        'dunk': [
+                            f"{primary_player} blows by {defender}...",
+                            f"{primary_player} cuts to the basket...",
+                            f"{primary_player} gets the step on {defender}..."
+                        ]
+                    }
+                    
+                    shot_text = np.random.choice(shot_descriptions[play_type])
+                    
+                    if np.random.random() < success_prob:
+                        # Shot successful
+                        if play_type == 'three_point':
+                            points_scored = 3
+                            play_text = f"{shot_text} BANG! {points_scored} points!"
+                            game_stats[primary_player]['FG3'] += 1
+                            game_stats[primary_player]['FG3A'] += 1
+                        elif play_type == 'dunk':
+                            points_scored = 2
+                            play_text = f"{shot_text} AND THROWS IT DOWN! Monster jam by {primary_player}!"
+                        else:
+                            points_scored = 2
+                            play_text = f"{shot_text} and it's GOOD! {points_scored} points!"
+                        
+                        # Update stats for all successful shots
+                        game_stats[primary_player]['PTS'] += points_scored
+                        game_stats[primary_player]['FG'] += 1
+                        game_stats[primary_player]['FGA'] += 1
+                        
+                    else:
+                        # Shot missed
+                        miss_descriptions = [
+                            "but it's no good!",
+                            "but it rims out!",
+                            "but it's a bit short!",
+                            "but it's off the mark!"
+                        ]
+                        miss_text = np.random.choice(miss_descriptions)
+                        play_text = f"{shot_text} {miss_text}"
+                        
+                        # Update stats for missed shots
+                        game_stats[primary_player]['FGA'] += 1
+                        if play_type == 'three_point':
+                            game_stats[primary_player]['FG3A'] += 1
+                        
+                        # Handle rebound
+                        if np.random.random() < 0.25:  # 25% chance of offensive rebound
+                            rebounder = np.random.choice(off_players)
+                            play_text += f" {rebounder} gets the offensive rebound!"
+                            game_stats[rebounder]['REB'] += 1
+                        else:
+                            rebounder = np.random.choice(def_players)
+                            play_text += f" {rebounder} grabs the defensive board."
+            
+            # Update team scores
+            if offensive_team == team1_name and points_scored > 0:
+                team1_score += points_scored
+            elif offensive_team == team2_name and points_scored > 0:
+                team2_score += points_scored
+            
+            # Format the possession with score
+            possession_text = f"{offensive_team} {team1_score}-{team2_score} {defensive_team}: {play_text}"
+            
+            # Add dramatic commentary for certain situations
+            if abs(team1_score - team2_score) >= 15:
+                if team1_score > team2_score and offensive_team == team1_name and points_scored > 0:
+                    possession_text += " They're pulling away!"
+                elif team2_score > team1_score and offensive_team == team2_name and points_scored > 0:
+                    possession_text += " The lead continues to grow!"
+            elif abs(team1_score - team2_score) <= 5 and (quarter == quarters) and poss > possessions * 0.7:
+                possession_text += " This is a close one down the stretch!"
+            
+            # Add to play-by-play
+            play_by_play.append(f"* {possession_text}")
+            
+            # Add quarter breaks and special commentary
+            if poss == int(possessions * 0.3):
+                play_by_play.append(f"\n**Current Score:** {team1_name} {team1_score} - {team2_score} {team2_name}")
+            elif poss == int(possessions * 0.7):
+                play_by_play.append(f"\n**Current Score:** {team1_name} {team1_score} - {team2_score} {team2_name}")
+                
+        # End of quarter summary
+        play_by_play.append(f"\n### End of Quarter {quarter}")
+        play_by_play.append(f"**Score:** {team1_name} {team1_score} - {team2_score} {team2_name}")
+        
+        # Add storylines between quarters
+        if quarter < quarters:
+            if abs(team1_score - team2_score) <= 3:
+                play_by_play.append("This game is coming down to the wire! Both teams are battling hard.")
+            elif team1_score > team2_score + 10:
+                play_by_play.append(f"{team2_name} needs to find an answer quickly if they want to get back in this game.")
+            elif team2_score > team1_score + 10:
+                play_by_play.append(f"{team1_name} will need to regroup and find a way to cut into this deficit.")
+            
+            play_by_play.append("\n---\n")
+    
+    # Final game summary
+    play_by_play.append("\n## 🏁 Final Score")
+    play_by_play.append(f"### {team1_name} {team1_score} - {team2_score} {team2_name}")
+    
+    # Determine winner
+    if team1_score > team2_score:
+        play_by_play.append(f"\n**{team1_name} WINS!**")
+        winner = team1_name
+    elif team2_score > team1_score:
+        play_by_play.append(f"\n**{team2_name} WINS!**")
+        winner = team2_name
+    else:
+        play_by_play.append("\n**IT'S A TIE!**")
+        winner = "Tie"
+    
+    # Compile player stats
+    play_by_play.append("\n## 📊 Box Score")
+    
+    # Team 1 Stats
+    play_by_play.append(f"\n### {team1_name}")
+    play_by_play.append("| Player | PTS | REB | AST | STL | BLK | FG | 3PT | FT | TO |")
+    play_by_play.append("|--------|-----|-----|-----|-----|-----|----|----|----|----|")
+    
+    for player, stats in team1_game_stats.items():
+        fg_text = f"{stats['FG']}/{stats['FGA']}"
+        fg3_text = f"{stats['FG3']}/{stats['FG3A']}"
+        ft_text = f"{stats['FT']}/{stats['FTA']}"
+        
+        play_by_play.append(f"| {player} | {stats['PTS']} | {stats['REB']} | {stats['AST']} | " + 
+                           f"{stats['STL']} | {stats['BLK']} | {fg_text} | {fg3_text} | {ft_text} | {stats['TO']} |")
+    
+    # Team 2 Stats
+    play_by_play.append(f"\n### {team2_name}")
+    play_by_play.append("| Player | PTS | REB | AST | STL | BLK | FG | 3PT | FT | TO |")
+    play_by_play.append("|--------|-----|-----|-----|-----|-----|----|----|----|----|")
+    
+    for player, stats in team2_game_stats.items():
+        fg_text = f"{stats['FG']}/{stats['FGA']}"
+        fg3_text = f"{stats['FG3']}/{stats['FG3A']}"
+        ft_text = f"{stats['FT']}/{stats['FTA']}"
+        
+        play_by_play.append(f"| {player} | {stats['PTS']} | {stats['REB']} | {stats['AST']} | " + 
+                           f"{stats['STL']} | {stats['BLK']} | {fg_text} | {fg3_text} | {ft_text} | {stats['TO']} |")
+    
+    # Determine game MVP
+    all_stats = {}
+    for player, stats in {**team1_game_stats, **team2_game_stats}.items():
+        # Simplified PER calculation
+        per = stats['PTS'] + stats['REB'] + stats['AST'] * 1.5 + stats['STL'] * 2 + stats['BLK'] * 2 - stats['TO']
+        all_stats[player] = per
+    
+    mvp = max(all_stats.items(), key=lambda x: x[1])[0]
+    mvp_stats = team1_game_stats.get(mvp) or team2_game_stats.get(mvp)
+    
+    play_by_play.append("\n## 🌟 Game MVP")
+    play_by_play.append(f"**{mvp}** with {mvp_stats['PTS']} points, {mvp_stats['REB']} rebounds, " + 
+                      f"and {mvp_stats['AST']} assists!")
+    
+    # Add footer
+    play_by_play.append("\n---")
+    play_by_play.append("*Simulation by Loftwah's Fantasy Basketball Tools*")
+    
+    # Join play-by-play into a single string
+    play_by_play_text = "\n".join(play_by_play)
+    
+    # Create visualization for the game
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 8), facecolor=NBA_COLORS['background'])
+    
+    # Scoring chart (left)
+    ax1.set_facecolor(NBA_COLORS['background'])
+    ax1.bar([team1_name, team2_name], [team1_score, team2_score], 
+           color=[NBA_COLORS['primary'], NBA_COLORS['secondary']])
+    
+    # Add score labels
+    for i, score in enumerate([team1_score, team2_score]):
+        ax1.text(i, score + 3, str(score), ha='center', color='white', fontsize=18, fontweight='bold')
+    
+    ax1.set_title('Final Score', color=NBA_COLORS['accent'], fontsize=16)
+    ax1.set_ylabel('Points', color=NBA_COLORS['accent'])
+    ax1.tick_params(axis='both', colors=NBA_COLORS['accent'])
+    ax1.spines['bottom'].set_color(NBA_COLORS['accent'])
+    ax1.spines['top'].set_color(NBA_COLORS['accent'])
+    ax1.spines['left'].set_color(NBA_COLORS['accent'])
+    ax1.spines['right'].set_color(NBA_COLORS['accent'])
+    
+    # Top performers (right)
+    ax2.set_facecolor(NBA_COLORS['background'])
+    ax2.axis('off')
+    
+    # Find top scorer from each team
+    team1_top_scorer = max(team1_game_stats.items(), key=lambda x: x[1]['PTS'])
+    team2_top_scorer = max(team2_game_stats.items(), key=lambda x: x[1]['PTS'])
+    
+    # Display top performers
+    text_color = NBA_COLORS['accent']
+    
+    ax2.text(0.5, 0.95, "Top Performers", ha='center', color=text_color, fontsize=16, fontweight='bold')
+    
+    # Team 1 top performer
+    ax2.text(0.5, 0.8, f"{team1_name}", ha='center', color=NBA_COLORS['primary'], fontsize=14)
+    ax2.text(0.5, 0.75, f"{team1_top_scorer[0]}", ha='center', color=text_color, fontsize=12, fontweight='bold')
+    ax2.text(0.5, 0.7, f"{team1_top_scorer[1]['PTS']} PTS, {team1_top_scorer[1]['REB']} REB, {team1_top_scorer[1]['AST']} AST", 
+            ha='center', color=text_color, fontsize=11)
+    
+    # Team 2 top performer
+    ax2.text(0.5, 0.5, f"{team2_name}", ha='center', color=NBA_COLORS['secondary'], fontsize=14)
+    ax2.text(0.5, 0.45, f"{team2_top_scorer[0]}", ha='center', color=text_color, fontsize=12, fontweight='bold')
+    ax2.text(0.5, 0.4, f"{team2_top_scorer[1]['PTS']} PTS, {team2_top_scorer[1]['REB']} REB, {team2_top_scorer[1]['AST']} AST", 
+            ha='center', color=text_color, fontsize=11)
+    
+    # MVP section
+    ax2.text(0.5, 0.2, "GAME MVP", ha='center', color=NBA_COLORS['highlight'], fontsize=14, fontweight='bold')
+    ax2.text(0.5, 0.15, mvp, ha='center', color=text_color, fontsize=12, fontweight='bold')
+    ax2.text(0.5, 0.1, f"{mvp_stats['PTS']} PTS, {mvp_stats['REB']} REB, {mvp_stats['AST']} AST", 
+            ha='center', color=text_color, fontsize=11)
+    
+    # Add branding
+    fig.text(0.95, 0.02, "Created by Loftwah", fontsize=10, 
+             ha='right', va='bottom', color=NBA_COLORS['highlight'],
+             url="https://linkarooie.com/loftwah")
+    
+    plt.tight_layout(rect=[0, 0.03, 1, 0.97])
+    
+    return play_by_play_text, fig
+
+def normalize_stats(df, column):
+    """Helper function to normalize a column to use as probability weights"""
+    if column not in df.columns or df[column].sum() == 0:
+        return np.ones(len(df)) / len(df)  # Equal probabilities if no valid data
+    
+    values = df[column].values
+    # Replace NaNs with minimum value
+    values[np.isnan(values)] = np.nanmin(values) if np.nanmin(values) > 0 else 0.1
+    # Ensure no negative values
+    values = np.maximum(values, 0.1)
+    # Normalize to sum to 1
+    return values / np.sum(values) 
