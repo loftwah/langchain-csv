@@ -24,7 +24,7 @@ class Player:
     """
     def __init__(self, name: str, stats: pd.Series = None):
         self.name = name
-        self.stats = stats or pd.Series()
+        self.stats = pd.Series() if stats is None else stats
         self.game_stats = self._init_game_stats()
         
     def _init_game_stats(self) -> Dict[str, int]:
@@ -84,9 +84,13 @@ class Team:
         totals = {
             'PTS': 0, 'REB': 0, 'AST': 0, 'STL': 0, 'BLK': 0, 'TO': 0
         }
+        
+        if not self.players:
+            return totals
+            
         for player in self.players:
             for stat in totals:
-                totals[stat] += player.game_stats[stat]
+                totals[stat] += player.game_stats.get(stat, 0)
         return totals
 
 
@@ -465,12 +469,11 @@ class GameRenderer:
                     margin-top: 5px;
                 }}
                 .quarter-scores {{
-                    display: flex;
-                    justify-content: space-between;
                     margin: 20px 0;
                     border: 1px solid #ddd;
                     border-radius: 5px;
                     overflow: hidden;
+                    width: 100%;
                 }}
                 .quarter-scores table {{
                     width: 100%;
@@ -479,7 +482,7 @@ class GameRenderer:
                 .quarter-scores th, .quarter-scores td {{
                     padding: 10px;
                     text-align: center;
-                    border-bottom: 1px solid #ddd;
+                    border: 1px solid #ddd;
                 }}
                 .quarter-scores th {{
                     background-color: #f3f3f3;
@@ -488,34 +491,31 @@ class GameRenderer:
                 .team-stats {{
                     display: flex;
                     justify-content: space-around;
-                    gap: 20px;
+                    width: 100%;
                     margin: 30px 0;
                 }}
                 .stats-container {{
                     flex: 1;
-                    max-width: 500px;
+                    max-width: 100%;
+                    overflow-x: auto;
                 }}
                 .stats-table {{
                     width: 100%;
                     border-collapse: collapse;
                     margin-top: 10px;
+                    border: 1px solid #ddd;
                     box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
                 }}
                 .stats-table th, .stats-table td {{
                     padding: 10px;
                     text-align: center;
-                    border-bottom: 1px solid #ddd;
+                    border: 1px solid #ddd;
                 }}
                 .stats-table th {{
                     background-color: #f3f3f3;
                     position: sticky;
                     top: 0;
-                }}
-                .stats-table tr:nth-child(even) {{
-                    background-color: #f9f9f9;
-                }}
-                .stats-table tr:hover {{
-                    background-color: #f1f1f1;
+                    font-weight: bold;
                 }}
                 .section-title {{
                     font-size: 20px;
@@ -571,99 +571,111 @@ class GameRenderer:
             
             <div class="section-title">Team Stats Comparison</div>
             <div class="team-stats">
-                <div class="stats-container">
+                <div class="stats-container" style="width: 100%;">
                     <table class="stats-table">
-                        <tr>
-                            <th>Stat</th>
-                            <th>{team1.name}</th>
-                            <th>{team2.name}</th>
-                        </tr>
-                        <tr>
-                            <td>Points</td>
-                            <td>{team1.total_stats['PTS']}</td>
-                            <td>{team2.total_stats['PTS']}</td>
-                        </tr>
-                        <tr>
-                            <td>Rebounds</td>
-                            <td>{team1.total_stats['REB']}</td>
-                            <td>{team2.total_stats['REB']}</td>
-                        </tr>
-                        <tr>
-                            <td>Assists</td>
-                            <td>{team1.total_stats['AST']}</td>
-                            <td>{team2.total_stats['AST']}</td>
-                        </tr>
-                        <tr>
-                            <td>Steals</td>
-                            <td>{team1.total_stats['STL']}</td>
-                            <td>{team2.total_stats['STL']}</td>
-                        </tr>
-                        <tr>
-                            <td>Blocks</td>
-                            <td>{team1.total_stats['BLK']}</td>
-                            <td>{team2.total_stats['BLK']}</td>
-                        </tr>
-                        <tr>
-                            <td>Turnovers</td>
-                            <td>{team1.total_stats['TO']}</td>
-                            <td>{team2.total_stats['TO']}</td>
-                        </tr>
+                        <thead>
+                            <tr>
+                                <th>Stat</th>
+                                <th>{team1.name}</th>
+                                <th>{team2.name}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Points</td>
+                                <td>{team1.total_stats['PTS']}</td>
+                                <td>{team2.total_stats['PTS']}</td>
+                            </tr>
+                            <tr>
+                                <td>Rebounds</td>
+                                <td>{team1.total_stats['REB']}</td>
+                                <td>{team2.total_stats['REB']}</td>
+                            </tr>
+                            <tr>
+                                <td>Assists</td>
+                                <td>{team1.total_stats['AST']}</td>
+                                <td>{team2.total_stats['AST']}</td>
+                            </tr>
+                            <tr>
+                                <td>Steals</td>
+                                <td>{team1.total_stats['STL']}</td>
+                                <td>{team2.total_stats['STL']}</td>
+                            </tr>
+                            <tr>
+                                <td>Blocks</td>
+                                <td>{team1.total_stats['BLK']}</td>
+                                <td>{team2.total_stats['BLK']}</td>
+                            </tr>
+                            <tr>
+                                <td>Turnovers</td>
+                                <td>{team1.total_stats['TO']}</td>
+                                <td>{team2.total_stats['TO']}</td>
+                            </tr>
+                        </tbody>
                     </table>
                 </div>
             </div>
             
             <div class="section-title">{team1.name} Player Stats</div>
             <div class="team-stats">
-                <div class="stats-container">
+                <div class="stats-container" style="width: 100%;">
                     <table class="stats-table">
-                        <tr>
-                            <th>Player</th>
-                            <th>PTS</th>
-                            <th>REB</th>
-                            <th>AST</th>
-                            <th>STL</th>
-                            <th>BLK</th>
-                            <th>TO</th>
-                        </tr>
-                        {"".join([f'''
-                        <tr>
-                            <td>{player.name}</td>
-                            <td>{player.game_stats['PTS']}</td>
-                            <td>{player.game_stats['REB']}</td>
-                            <td>{player.game_stats['AST']}</td>
-                            <td>{player.game_stats['STL']}</td>
-                            <td>{player.game_stats['BLK']}</td>
-                            <td>{player.game_stats['TO']}</td>
-                        </tr>
-                        ''' for player in team1.players])}
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>PTS</th>
+                                <th>REB</th>
+                                <th>AST</th>
+                                <th>STL</th>
+                                <th>BLK</th>
+                                <th>TO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {"".join([f'''
+                            <tr>
+                                <td>{player.name}</td>
+                                <td>{player.game_stats['PTS']}</td>
+                                <td>{player.game_stats['REB']}</td>
+                                <td>{player.game_stats['AST']}</td>
+                                <td>{player.game_stats['STL']}</td>
+                                <td>{player.game_stats['BLK']}</td>
+                                <td>{player.game_stats['TO']}</td>
+                            </tr>
+                            ''' for player in team1.players])}
+                        </tbody>
                     </table>
                 </div>
             </div>
             
             <div class="section-title">{team2.name} Player Stats</div>
             <div class="team-stats">
-                <div class="stats-container">
+                <div class="stats-container" style="width: 100%;">
                     <table class="stats-table">
-                        <tr>
-                            <th>Player</th>
-                            <th>PTS</th>
-                            <th>REB</th>
-                            <th>AST</th>
-                            <th>STL</th>
-                            <th>BLK</th>
-                            <th>TO</th>
-                        </tr>
-                        {"".join([f'''
-                        <tr>
-                            <td>{player.name}</td>
-                            <td>{player.game_stats['PTS']}</td>
-                            <td>{player.game_stats['REB']}</td>
-                            <td>{player.game_stats['AST']}</td>
-                            <td>{player.game_stats['STL']}</td>
-                            <td>{player.game_stats['BLK']}</td>
-                            <td>{player.game_stats['TO']}</td>
-                        </tr>
-                        ''' for player in team2.players])}
+                        <thead>
+                            <tr>
+                                <th>Player</th>
+                                <th>PTS</th>
+                                <th>REB</th>
+                                <th>AST</th>
+                                <th>STL</th>
+                                <th>BLK</th>
+                                <th>TO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {"".join([f'''
+                            <tr>
+                                <td>{player.name}</td>
+                                <td>{player.game_stats['PTS']}</td>
+                                <td>{player.game_stats['REB']}</td>
+                                <td>{player.game_stats['AST']}</td>
+                                <td>{player.game_stats['STL']}</td>
+                                <td>{player.game_stats['BLK']}</td>
+                                <td>{player.game_stats['TO']}</td>
+                            </tr>
+                            ''' for player in team2.players])}
+                        </tbody>
                     </table>
                 </div>
             </div>
