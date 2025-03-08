@@ -76,6 +76,38 @@ def create_interface():
                             )
                             matchup_btn = gr.Button("Compare Teams", variant="primary")
                     
+                    # Add preset team compositions
+                    with gr.Accordion("Preset Team Matchups", open=False):
+                        gr.Markdown("### Quick team comparison presets")
+                        with gr.Row():
+                            preset1_btn = gr.Button("Stars vs All-Around")
+                            preset2_btn = gr.Button("Scoring vs Defense")
+                            preset3_btn = gr.Button("Young Guns vs Veterans")
+                        
+                        # Define preset team compositions
+                        def load_preset_stars_allround():
+                            return {
+                                team1: "LeBron James, Kevin Durant, Stephen Curry, Kyrie Irving, Devin Booker",
+                                team2: "Nikola Jokic, Giannis Antetokounmpo, Luka Doncic, Jayson Tatum, Anthony Edwards"
+                            }
+                        
+                        def load_preset_offense_defense():
+                            return {
+                                team1: "Damian Lillard, Trae Young, Anthony Edwards, Zach LaVine, Karl-Anthony Towns",
+                                team2: "Rudy Gobert, Bam Adebayo, Draymond Green, Jrue Holiday, Mikal Bridges"
+                            }
+                        
+                        def load_preset_young_vets():
+                            return {
+                                team1: "Anthony Edwards, LaMelo Ball, Cade Cunningham, Scottie Barnes, Paolo Banchero",
+                                team2: "Chris Paul, LeBron James, Kevin Durant, Jimmy Butler, Al Horford"
+                            }
+                        
+                        # Connect preset buttons
+                        preset1_btn.click(fn=load_preset_stars_allround, outputs=[team1, team2])
+                        preset2_btn.click(fn=load_preset_offense_defense, outputs=[team1, team2])
+                        preset3_btn.click(fn=load_preset_young_vets, outputs=[team1, team2])
+                    
                     matchup_result = gr.Markdown(label="Matchup Analysis")
                     matchup_plot = gr.Plot(label="Category Comparison", elem_classes=["plot-container"])
                     

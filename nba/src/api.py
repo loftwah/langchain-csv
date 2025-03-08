@@ -21,7 +21,13 @@ def get_players():
         # Try static data first (faster)
         all_players = players.get_players()
         if all_players:
-            return pd.DataFrame(all_players)
+            df = pd.DataFrame(all_players)
+            # Ensure we have standardized column names
+            if 'full_name' in df.columns and 'DISPLAY_FIRST_LAST' not in df.columns:
+                df['DISPLAY_FIRST_LAST'] = df['full_name']
+            if 'id' in df.columns and 'PERSON_ID' not in df.columns:
+                df['PERSON_ID'] = df['id']
+            return df
     except Exception as e:
         print(f"Error retrieving players from static data: {e}")
     
@@ -35,17 +41,46 @@ def get_players():
 
 def get_player_id(player_name):
     """Get player ID from name"""
+    if not player_name or pd.isna(player_name) or player_name.strip() == "":
+        return None
+        
+    player_name = player_name.strip()
     all_players = get_players()
     
+    # Determine which column to use for player names
+    if 'DISPLAY_FIRST_LAST' in all_players.columns:
+        name_column = 'DISPLAY_FIRST_LAST'
+    elif 'full_name' in all_players.columns:
+        name_column = 'full_name'
+    elif 'PLAYER_NAME' in all_players.columns:
+        name_column = 'PLAYER_NAME'
+    else:
+        print(f"Warning: No recognizable name column in player data. Columns: {all_players.columns.tolist()}")
+        return None
+    
+    # Determine which column to use for player IDs
+    if 'PERSON_ID' in all_players.columns:
+        id_column = 'PERSON_ID'
+    elif 'id' in all_players.columns:
+        id_column = 'id'
+    elif 'PLAYER_ID' in all_players.columns:
+        id_column = 'PLAYER_ID'
+    else:
+        print(f"Warning: No recognizable ID column in player data. Columns: {all_players.columns.tolist()}")
+        return None
+    
     # Try exact match
-    exact_match = all_players[all_players['DISPLAY_FIRST_LAST'] == player_name]
+    exact_match = all_players[all_players[name_column] == player_name]
     if not exact_match.empty:
-        return exact_match.iloc[0]['PERSON_ID']
+        return exact_match.iloc[0][id_column]
     
     # Try contains match
-    contains_match = all_players[all_players['DISPLAY_FIRST_LAST'].str.contains(player_name, case=False, na=False)]
-    if not contains_match.empty:
-        return contains_match.iloc[0]['PERSON_ID']
+    try:
+        contains_match = all_players[all_players[name_column].str.contains(player_name, case=False, na=False)]
+        if not contains_match.empty:
+            return contains_match.iloc[0][id_column]
+    except Exception as e:
+        print(f"Error in string matching for player '{player_name}': {e}")
     
     return None
 
