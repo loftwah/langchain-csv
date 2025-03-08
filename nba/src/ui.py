@@ -27,14 +27,22 @@ def create_draft_helper_ui():
             draft_pos = gr.Slider(minimum=1, maximum=20, value=6, step=1, label="Your Draft Position")
             
             analyze_btn = gr.Button("Generate Draft Analysis", variant="primary")
-            
+    
+    with gr.Row():
         with gr.Column(scale=2):
-            output_area = gr.Dataframe(label="Draft Rankings and Analysis")
+            draft_plot = gr.Plot(label="Top Players Visualization")
             
+        with gr.Column(scale=3):
+            output_area = gr.Dataframe(label="Draft Rankings and Analysis")
+    
+    def process_draft_helper(teams, scoring, pos):
+        df, fig = draft_helper(int(teams), scoring, int(pos))
+        return fig, df
+    
     analyze_btn.click(
-        fn=lambda teams, scoring, pos: draft_helper(int(teams), scoring, int(pos))[0],
+        fn=process_draft_helper,
         inputs=[num_teams, scoring_type, draft_pos],
-        outputs=output_area
+        outputs=[draft_plot, output_area]
     )
     
     return output_area
