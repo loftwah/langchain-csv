@@ -1,2 +1,4 @@
 .gradio
 .venv
+__pycache__
+nba_api_cache
