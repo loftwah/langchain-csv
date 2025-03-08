@@ -1088,162 +1088,14 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
     # Join play-by-play into a single string
     play_by_play_text = "\n".join(play_by_play)
     
-    # Create a more complex figure with custom layout
-    fig = make_subplots(
-        rows=3, 
-        cols=3,
-        specs=[
-            [{"colspan": 3, "type": "bar"}, None, None],  # Top row: Final Score (full width)
-            [{"colspan": 1, "type": "bar"}, {"colspan": 2, "type": "scatter"}, None],  # Second row: Quarter scores + Top performers
-            [{"colspan": 1, "type": "bar"}, {"colspan": 1, "type": "polar"}, {"colspan": 1, "type": "table"}]  # Third row: Team stats, Radar, Table
-        ],
-        subplot_titles=[
-            "Final Score",  # Row 1
-            "Quarter-by-Quarter Scoring", "Top Performers",  # Row 2
-            "Points by Category", "Team Stats Comparison", "Game Leaders"  # Row 3
-        ],
-        vertical_spacing=0.08,
-        horizontal_spacing=0.05
-    )
+    # Build a comprehensive HTML-based visualization with multiple charts and tables
+    # This uses HTML which will render properly in Gradio
     
-    # 1. Final Score Bar Chart (Top Row - Spanning all columns)
-    fig.add_trace(
-        go.Bar(
-            x=[team1_name, team2_name],
-            y=[team1_score, team2_score],
-            text=[f"<b>{team1_score}</b>", f"<b>{team2_score}</b>"],
-            textposition='auto',
-            textfont=dict(size=20),
-            marker_color=['#17408B', '#C9082A'],
-            marker_line_width=1.5,
-            marker_line_color='white',
-            width=[0.6, 0.6],
-            name="Final Score"
-        ),
-        row=1, col=1
-    )
+    # Extract top scorers from each team
+    team1_top = sorted([(p, s['PTS']) for p, s in team1_game_stats.items()], key=lambda x: x[1], reverse=True)
+    team2_top = sorted([(p, s['PTS']) for p, s in team2_game_stats.items()], key=lambda x: x[1], reverse=True)
     
-    # 2. Quarter-by-Quarter Scoring (Row 2, Col 1)
-    # Calculate quarter-by-quarter scores
-    quarters = [f"Q{i+1}" for i in range(4)]  # Assuming 4 quarters
-    team1_quarters = []
-    team2_quarters = []
-    
-    current_team1 = 0
-    current_team2 = 0
-    
-    for i, q in enumerate(play_by_play):
-        if f"End of Quarter" in q:
-            # Extract scores using regex
-            scores = re.findall(r'(\d+)\s*-\s*(\d+)', q)
-            if scores:
-                team1_score_q = int(scores[0][0])
-                team2_score_q = int(scores[0][1])
-                
-                # Calculate points scored in this quarter
-                team1_q_points = team1_score_q - current_team1
-                team2_q_points = team2_score_q - current_team2
-                
-                team1_quarters.append(team1_q_points)
-                team2_quarters.append(team2_q_points)
-                
-                current_team1 = team1_score_q
-                current_team2 = team2_score_q
-    
-    # If we don't have enough quarters (shouldn't happen), pad with zeros
-    while len(team1_quarters) < 4:
-        team1_quarters.append(0)
-        team2_quarters.append(0)
-    
-    # Create quarter-by-quarter subplot
-    fig.add_trace(
-        go.Bar(
-            x=quarters, 
-            y=team1_quarters,
-            name=team1_name,
-            marker_color='#17408B',
-            marker_line_width=1,
-            marker_line_color='white',
-            width=0.3,
-            text=team1_quarters,
-            textposition='outside',
-            textfont=dict(color='#17408B')
-        ),
-        row=2, col=1
-    )
-    
-    fig.add_trace(
-        go.Bar(
-            x=quarters, 
-            y=team2_quarters,
-            name=team2_name,
-            marker_color='#C9082A',
-            marker_line_width=1,
-            marker_line_color='white',
-            width=0.3,
-            text=team2_quarters,
-            textposition='outside',
-            textfont=dict(color='#C9082A')
-        ),
-        row=2, col=1
-    )
-    
-    # 3. Top Performers Scatter Plot (Row 2, Col 2 - Spanning 2 columns)
-    # Extract top 4 scorers from each team
-    team1_top = sorted([(p, s['PTS']) for p, s in team1_game_stats.items()], key=lambda x: x[1], reverse=True)[:4]
-    team2_top = sorted([(p, s['PTS']) for p, s in team2_game_stats.items()], key=lambda x: x[1], reverse=True)[:4]
-    
-    # Combine players with their teams
-    top_players = [(p, team1_name, pts) for p, pts in team1_top] + [(p, team2_name, pts) for p, pts in team2_top]
-    
-    # Sort by points (highest first)
-    top_players.sort(key=lambda x: x[2], reverse=True)
-    top_players = top_players[:8]  # Limit to top 8 players
-    
-    # Create hover text with detailed stats
-    hover_texts = []
-    player_labels = []
-    player_x = []  # More evenly distribute players
-    
-    for i, (player, team, _) in enumerate(top_players):
-        # Create shorter player names for display (last name only)
-        short_name = player.split()[-1] if len(player.split()) > 1 else player
-        player_labels.append(f"{short_name} ({team[0]})")
-        player_x.append(i)
-        
-        stats = team1_game_stats.get(player) or team2_game_stats.get(player)
-        hover_texts.append(
-            f"<b>{player}</b> ({team})<br>" +
-            f"PTS: {stats['PTS']}<br>" +
-            f"REB: {stats['REB']}<br>" +
-            f"AST: {stats['AST']}<br>" +
-            f"FG: {stats['FG']}/{stats['FGA']}<br>" +
-            f"3PT: {stats['FG3']}/{stats['FG3A']}"
-        )
-    
-    fig.add_trace(
-        go.Scatter(
-            x=player_x,
-            y=[p[2] for p in top_players],
-            mode='markers+text',
-            marker=dict(
-                size=[min(p[2]*1.5, 40) for p in top_players],
-                color=[('#17408B' if p[1] == team1_name else '#C9082A') for p in top_players],
-                opacity=0.8,
-                line=dict(width=2, color='white')
-            ),
-            text=player_labels,
-            textposition='top center',
-            textfont=dict(size=11),
-            hovertext=hover_texts,
-            hoverinfo='text',
-            name='Top Players'
-        ),
-        row=2, col=2
-    )
-    
-    # 4. Team Stats by Category Bar Chart (Row 3, Col 1)
-    # Calculate team totals first
+    # Calculate team totals
     team1_totals = {
         'PTS': sum(s['PTS'] for s in team1_game_stats.values()),
         'REB': sum(s['REB'] for s in team1_game_stats.values()),
@@ -1262,317 +1114,304 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
         'TO': sum(s['TO'] for s in team2_game_stats.values())
     }
     
-    # Create category-by-category comparison
-    stat_categories = ['PTS', 'REB', 'AST', 'STL', 'BLK']
-    team1_cat_values = [team1_totals[cat] for cat in stat_categories]
-    team2_cat_values = [team2_totals[cat] for cat in stat_categories]
+    # Determine the winner and set colors
+    if team1_score > team2_score:
+        winner = team1_name
+        winner_color = "#17408B"  # Team 1 blue color
+    elif team2_score > team1_score:
+        winner = team2_name
+        winner_color = "#C9082A"  # Team 2 red color
+    else:
+        winner = "Tie"
+        winner_color = "#F7B801"  # Gold color for tie
     
-    fig.add_trace(
+    # Create a bar chart for the final score
+    final_score_fig = go.Figure()
+    final_score_fig.add_trace(
         go.Bar(
-            y=stat_categories,
-            x=team1_cat_values,
-            name=team1_name,
-            marker_color='#17408B',
-            orientation='h',
-            text=team1_cat_values,
-            textposition='outside',
-            textfont=dict(size=10)
-        ),
-        row=3, col=1
+            x=[team1_name, team2_name],
+            y=[team1_score, team2_score],
+            text=[f"<b>{team1_score}</b>", f"<b>{team2_score}</b>"],
+            textposition='auto',
+            textfont=dict(size=28),
+            marker_color=['#17408B', '#C9082A'],
+            marker_line_width=2,
+            marker_line_color='white',
+            width=[0.6, 0.6]
+        )
     )
     
-    fig.add_trace(
-        go.Bar(
-            y=stat_categories,
-            x=team2_cat_values,
-            name=team2_name,
-            marker_color='#C9082A',
-            orientation='h',
-            text=team2_cat_values, 
-            textposition='outside',
-            textfont=dict(size=10)
-        ),
-        row=3, col=1
-    )
-    
-    # 5. Team Stats Comparison Radar Chart (Row 3, Col 2)
-    # Normalize values for better comparison
-    max_stats = {
-        cat: max(team1_totals[cat], team2_totals[cat]) for cat in stat_categories
-    }
-    
-    # Scale everything relative to max across both teams (with buffer)
-    # Add safety check to avoid division by zero
-    team1_values = [team1_totals[cat] / max(max_stats[cat], 1) * 9 + 1 for cat in stat_categories]
-    team2_values = [team2_totals[cat] / max(max_stats[cat], 1) * 9 + 1 for cat in stat_categories]
-    
-    # Add first point to close the loop
-    categories_closed = stat_categories + [stat_categories[0]]
-    team1_values_closed = team1_values + [team1_values[0]]
-    team2_values_closed = team2_values + [team2_values[0]]
-    
-    # Create radar chart
-    fig.add_trace(
-        go.Scatterpolar(
-            r=team1_values_closed,
-            theta=categories_closed,
-            fill='toself',
-            name=team1_name,
-            marker_color='#17408B',
-            opacity=0.7,
-            line=dict(width=2, color='#17408B')
-        ),
-        row=3, col=2
-    )
-    
-    fig.add_trace(
-        go.Scatterpolar(
-            r=team2_values_closed,
-            theta=categories_closed,
-            fill='toself',
-            name=team2_name,
-            marker_color='#C9082A',
-            opacity=0.7,
-            line=dict(width=2, color='#C9082A')
-        ),
-        row=3, col=2
-    )
-    
-    # Add stat labels to radar chart (same as before, but with updated row/col)
-    for i, cat in enumerate(stat_categories):
-        # Team 1 stats
-        stat_value = team1_totals[cat]
-        # Only add annotation if there's data to show
-        if stat_value > 0:
-            fig.add_trace(
-                go.Scatterpolar(
-                    r=[team1_values[i] + 0.5],
-                    theta=[cat],
-                    mode='markers+text',
-                    text=[str(stat_value)],
-                    textposition='middle center',
-                    textfont=dict(size=10, color='#17408B'),
-                    marker=dict(
-                        size=18,
-                        color='rgba(255,255,255,0.7)',
-                        line=dict(width=1, color='#17408B')
-                    ),
-                    showlegend=False,
-                    hoverinfo='skip'
-                ),
-                row=3, col=2
-            )
-        
-        # Team 2 stats
-        stat_value = team2_totals[cat]
-        # Only add annotation if there's data to show
-        if stat_value > 0:
-            fig.add_trace(
-                go.Scatterpolar(
-                    r=[team2_values[i] + 0.5],
-                    theta=[cat],
-                    mode='markers+text',
-                    text=[str(stat_value)],
-                    textposition='middle center',
-                    textfont=dict(size=10, color='#C9082A'),
-                    marker=dict(
-                        size=18,
-                        color='rgba(255,255,255,0.7)',
-                        line=dict(width=1, color='#C9082A')
-                    ),
-                    showlegend=False,
-                    hoverinfo='skip'
-                ),
-                row=3, col=2
-            )
-    
-    # 6. Game Leaders Table (Row 3, Col 3)
-    # Create a simplified table of game leaders
-    leaders = {
-        "Category": ["Points", "Rebounds", "Assists", "Steals", "Blocks"],
-        "Leader": ["", "", "", "", ""],
-        "Value": [0, 0, 0, 0, 0], 
-        "Team": ["", "", "", "", ""]
-    }
-    
-    # Find leaders for each category
-    all_players = {**team1_game_stats, **team2_game_stats}
-    
-    # Points leader
-    pts_leader = max(all_players.items(), key=lambda x: x[1]['PTS'])
-    leaders["Leader"][0] = pts_leader[0]
-    leaders["Value"][0] = pts_leader[1]['PTS']
-    leaders["Team"][0] = team1_name if pts_leader[0] in team1_game_stats else team2_name
-    
-    # Rebounds leader
-    reb_leader = max(all_players.items(), key=lambda x: x[1]['REB'])
-    leaders["Leader"][1] = reb_leader[0]
-    leaders["Value"][1] = reb_leader[1]['REB']
-    leaders["Team"][1] = team1_name if reb_leader[0] in team1_game_stats else team2_name
-    
-    # Assists leader
-    ast_leader = max(all_players.items(), key=lambda x: x[1]['AST'])
-    leaders["Leader"][2] = ast_leader[0]
-    leaders["Value"][2] = ast_leader[1]['AST']
-    leaders["Team"][2] = team1_name if ast_leader[0] in team1_game_stats else team2_name
-    
-    # Steals leader
-    stl_leader = max(all_players.items(), key=lambda x: x[1]['STL'])
-    leaders["Leader"][3] = stl_leader[0]
-    leaders["Value"][3] = stl_leader[1]['STL']
-    leaders["Team"][3] = team1_name if stl_leader[0] in team1_game_stats else team2_name
-    
-    # Blocks leader
-    blk_leader = max(all_players.items(), key=lambda x: x[1]['BLK'])
-    leaders["Leader"][4] = blk_leader[0]
-    leaders["Value"][4] = blk_leader[1]['BLK']
-    leaders["Team"][4] = team1_name if blk_leader[0] in team1_game_stats else team2_name
-    
-    # Create a leaders table with colored cells by team
-    cell_colors = []
-    for team in leaders["Team"]:
-        if team == team1_name:
-            cell_colors.append(['#17408B', '#17408B', '#17408B', '#17408B'])
-        else:
-            cell_colors.append(['#C9082A', '#C9082A', '#C9082A', '#C9082A'])
-    
-    # Format leader names (last name only)
-    short_names = []
-    for name in leaders["Leader"]:
-        name_parts = name.split()
-        short_names.append(name_parts[-1] if len(name_parts) > 1 else name)
-    
-    fig.add_trace(
-        go.Table(
-            header=dict(
-                values=["Category", "Leader", "Value", "Team"],
-                fill_color="rgba(30,30,40,0.8)",
-                align="center",
-                font=dict(color="white", size=12)
-            ),
-            cells=dict(
-                values=[
-                    leaders["Category"], 
-                    short_names, 
-                    leaders["Value"], 
-                    leaders["Team"]
-                ],
-                fill_color=['rgba(30,30,40,0.6)', cell_colors],
-                align="center",
-                font=dict(color="white", size=11),
-                height=30
-            )
-        ),
-        row=3, col=3
-    )
-    
-    # Add MVP annotation with improved styling
-    fig.add_annotation(
-        xref="paper", yref="paper",
-        x=0.5, y=1.05,
-        text=f"<b>GAME MVP:</b> {mvp} ({mvp_stats['PTS']} pts, {mvp_stats['REB']} reb, {mvp_stats['AST']} ast)",
-        showarrow=False,
-        font=dict(size=18, color="#F7B801"),
-        bgcolor="rgba(0,0,0,0.5)",
-        bordercolor="#F7B801",
-        borderwidth=2,
-        borderpad=8,
-        align="center",
-        width=600,
-        height=40
-    )
-    
-    # Add winner annotation with improved styling
-    winner_color = "#17408B" if winner == team1_name else "#C9082A" if winner != "Tie" else "#555555"
-    fig.add_annotation(
-        xref="paper", yref="paper",
-        x=0.5, y=-0.05,
-        text=f"<b>{winner} WINS!</b>" if winner != "Tie" else "<b>IT'S A TIE!</b>",
-        showarrow=False,
-        font=dict(size=20, color="#FFFFFF"),
-        bgcolor=winner_color,
-        borderpad=8,
-        align="center",
-        width=400,
-        height=40
-    )
-    
-    # Update layout
-    fig.update_layout(
+    final_score_fig.update_layout(
         title={
-            'text': f"{team1_name} vs {team2_name} - Game Simulation",
-            'y':0.98,
+            'text': f"<b>{team1_name} vs {team2_name}</b>: {team1_score}-{team2_score}",
+            'y':0.95,
             'x':0.5,
             'xanchor': 'center',
             'yanchor': 'top',
-            'font': dict(size=24, color='#F7B801')
+            'font': {'size': 24, 'color': '#F7B801'}
         },
-        autosize=True,
-        height=1100,  # Increased height for more space
-        width=1300,
-        showlegend=True,
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1,
-            font=dict(size=12),
-            bgcolor="rgba(0,0,0,0.3)",
-            bordercolor="rgba(255,255,255,0.2)",
-            borderwidth=1
-        ),
-        barmode='group',
-        bargap=0.25,
-        hovermode='closest',
+        height=300,
         template="plotly_dark",
-        margin=dict(l=40, r=30, t=120, b=80),
+        margin=dict(l=40, r=40, t=80, b=20),
+        paper_bgcolor='rgba(20,20,30,1)',
+        plot_bgcolor='rgba(30,30,40,1)',
+    )
+    
+    # Create a bar chart for the team stats comparison
+    categories = ['PTS', 'REB', 'AST', 'STL', 'BLK']
+    team_stats_fig = go.Figure()
+    team_stats_fig.add_trace(
+        go.Bar(
+            y=categories,
+            x=[team1_totals[cat] for cat in categories],
+            orientation='h',
+            name=team1_name,
+            marker_color='#17408B',
+            text=[team1_totals[cat] for cat in categories],
+            textposition='outside'
+        )
+    )
+    
+    team_stats_fig.add_trace(
+        go.Bar(
+            y=categories,
+            x=[team2_totals[cat] for cat in categories],
+            orientation='h',
+            name=team2_name,
+            marker_color='#C9082A',
+            text=[team2_totals[cat] for cat in categories],
+            textposition='outside'
+        )
+    )
+    
+    team_stats_fig.update_layout(
+        title="Team Stat Comparison",
+        height=350,
+        barmode='group',
+        template="plotly_dark",
+        margin=dict(l=40, r=40, t=60, b=40),
         paper_bgcolor='rgba(20,20,30,1)',
         plot_bgcolor='rgba(30,30,40,1)'
     )
     
-    # Update polar radial axis range
-    max_value = max(max(team1_values), max(team2_values)) * 1.2
-    # Ensure a minimum value for better visualization
-    max_value = max(max_value, 5)
+    # Create a table with detailed player stats for Team 1
+    team1_table_data = []
+    for player, stats in sorted(team1_game_stats.items(), key=lambda x: x[1]['PTS'], reverse=True):
+        fg_pct = f"{(stats['FG']/stats['FGA']*100):.1f}%" if stats['FGA'] > 0 else "0.0%"
+        fg3_pct = f"{(stats['FG3']/stats['FG3A']*100):.1f}%" if stats['FG3A'] > 0 else "0.0%"
+        ft_pct = f"{(stats['FT']/stats['FTA']*100):.1f}%" if stats['FTA'] > 0 else "0.0%"
+        row = [
+            player,
+            stats['PTS'],
+            stats['REB'],
+            stats['AST'],
+            stats['STL'],
+            stats['BLK'],
+            f"{stats['FG']}/{stats['FGA']} ({fg_pct})",
+            f"{stats['FG3']}/{stats['FG3A']} ({fg3_pct})",
+            stats['TO']
+        ]
+        team1_table_data.append(row)
     
-    fig.layout.polar = dict(
-        radialaxis=dict(
-            visible=True,
-            range=[0, max_value],
-            tickfont=dict(size=10),
-            tickangle=45
-        ),
-        angularaxis=dict(
-            tickfont=dict(size=12),
-            rotation=90,
-            direction="clockwise"
-        ),
-        bgcolor="rgba(30,30,30,0.8)"
-    )
+    # Create a table with detailed player stats for Team 2
+    team2_table_data = []
+    for player, stats in sorted(team2_game_stats.items(), key=lambda x: x[1]['PTS'], reverse=True):
+        fg_pct = f"{(stats['FG']/stats['FGA']*100):.1f}%" if stats['FGA'] > 0 else "0.0%"
+        fg3_pct = f"{(stats['FG3']/stats['FG3A']*100):.1f}%" if stats['FG3A'] > 0 else "0.0%"
+        ft_pct = f"{(stats['FT']/stats['FTA']*100):.1f}%" if stats['FTA'] > 0 else "0.0%"
+        row = [
+            player,
+            stats['PTS'],
+            stats['REB'],
+            stats['AST'],
+            stats['STL'],
+            stats['BLK'],
+            f"{stats['FG']}/{stats['FGA']} ({fg_pct})",
+            f"{stats['FG3']}/{stats['FG3A']} ({fg3_pct})",
+            stats['TO']
+        ]
+        team2_table_data.append(row)
     
-    # Update axes styling
-    fig.update_xaxes(title_font=dict(size=14), tickfont=dict(size=12))
-    fig.update_yaxes(title_font=dict(size=14), tickfont=dict(size=12))
+    # Create a figure that contains ALL the visualizations using HTML
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: white; background-color: #121212;">
+        <!-- Title Banner -->
+        <div style="background: linear-gradient(90deg, #17408B, #C9082A); padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px;">
+            <h1 style="color: white; margin: 0; font-size: 28px;">{team1_name} vs {team2_name}</h1>
+            <h2 style="color: #F7B801; margin: 10px 0 0 0; font-size: 24px;">Final Score: {team1_score} - {team2_score}</h2>
+        </div>
+        
+        <!-- MVP Section -->
+        <div style="background-color: rgba(40, 40, 50, 0.8); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 2px solid #F7B801;">
+            <h2 style="color: #F7B801; margin-top: 0; text-align: center;">🌟 GAME MVP: {mvp}</h2>
+            <p style="text-align: center; font-size: 18px;">{mvp_stats['PTS']} PTS | {mvp_stats['REB']} REB | {mvp_stats['AST']} AST | {mvp_stats['STL']} STL | {mvp_stats['BLK']} BLK</p>
+            <p style="text-align: center; font-size: 16px;">FG: {mvp_stats['FG']}/{mvp_stats['FGA']} | 3PT: {mvp_stats['FG3']}/{mvp_stats['FG3A']} | TO: {mvp_stats['TO']}</p>
+        </div>
+        
+        <!-- Team Stats Side by Side -->
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px;">
+            <div style="flex: 1; min-width: 300px; background-color: rgba(23, 64, 139, 0.3); padding: 15px; border-radius: 10px; border-left: 4px solid #17408B;">
+                <h3 style="color: white; margin-top: 0;">{team1_name} Team Stats</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                        <td style="padding: 8px 0; color: rgba(255,255,255,0.8);">Points</td>
+                        <td style="padding: 8px 0; text-align: right; font-weight: bold;">{team1_totals['PTS']}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                        <td style="padding: 8px 0; color: rgba(255,255,255,0.8);">Rebounds</td>
+                        <td style="padding: 8px 0; text-align: right; font-weight: bold;">{team1_totals['REB']}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                        <td style="padding: 8px 0; color: rgba(255,255,255,0.8);">Assists</td>
+                        <td style="padding: 8px 0; text-align: right; font-weight: bold;">{team1_totals['AST']}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                        <td style="padding: 8px 0; color: rgba(255,255,255,0.8);">Steals</td>
+                        <td style="padding: 8px 0; text-align: right; font-weight: bold;">{team1_totals['STL']}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                        <td style="padding: 8px 0; color: rgba(255,255,255,0.8);">Blocks</td>
+                        <td style="padding: 8px 0; text-align: right; font-weight: bold;">{team1_totals['BLK']}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: rgba(255,255,255,0.8);">Turnovers</td>
+                        <td style="padding: 8px 0; text-align: right; font-weight: bold;">{team1_totals['TO']}</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div style="flex: 1; min-width: 300px; background-color: rgba(201, 8, 42, 0.3); padding: 15px; border-radius: 10px; border-left: 4px solid #C9082A;">
+                <h3 style="color: white; margin-top: 0;">{team2_name} Team Stats</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                        <td style="padding: 8px 0; color: rgba(255,255,255,0.8);">Points</td>
+                        <td style="padding: 8px 0; text-align: right; font-weight: bold;">{team2_totals['PTS']}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                        <td style="padding: 8px 0; color: rgba(255,255,255,0.8);">Rebounds</td>
+                        <td style="padding: 8px 0; text-align: right; font-weight: bold;">{team2_totals['REB']}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                        <td style="padding: 8px 0; color: rgba(255,255,255,0.8);">Assists</td>
+                        <td style="padding: 8px 0; text-align: right; font-weight: bold;">{team2_totals['AST']}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                        <td style="padding: 8px 0; color: rgba(255,255,255,0.8);">Steals</td>
+                        <td style="padding: 8px 0; text-align: right; font-weight: bold;">{team2_totals['STL']}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                        <td style="padding: 8px 0; color: rgba(255,255,255,0.8);">Blocks</td>
+                        <td style="padding: 8px 0; text-align: right; font-weight: bold;">{team2_totals['BLK']}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px 0; color: rgba(255,255,255,0.8);">Turnovers</td>
+                        <td style="padding: 8px 0; text-align: right; font-weight: bold;">{team2_totals['TO']}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Team 1 Player Stats Table -->
+        <div style="margin-bottom: 20px; background-color: rgba(30,30,40,0.9); padding: 15px; border-radius: 10px;">
+            <h3 style="color: #17408B; margin-top: 0; border-bottom: 2px solid #17408B; padding-bottom: 8px;">
+                {team1_name} Player Stats
+            </h3>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid rgba(255,255,255,0.2);">
+                            <th style="text-align: left; padding: 10px 15px; color: white;">Player</th>
+                            <th style="text-align: center; padding: 10px 15px; color: white;">PTS</th>
+                            <th style="text-align: center; padding: 10px 15px; color: white;">REB</th>
+                            <th style="text-align: center; padding: 10px 15px; color: white;">AST</th>
+                            <th style="text-align: center; padding: 10px 15px; color: white;">STL</th>
+                            <th style="text-align: center; padding: 10px 15px; color: white;">BLK</th>
+                            <th style="text-align: center; padding: 10px 15px; color: white;">FG</th>
+                            <th style="text-align: center; padding: 10px 15px; color: white;">3PT</th>
+                            <th style="text-align: center; padding: 10px 15px; color: white;">TO</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+    """
     
-    # Specific axis labels
-    fig.update_xaxes(title_text="Teams", row=1, col=1)
-    fig.update_yaxes(title_text="Final Score", row=1, col=1)
+    # Add Team 1 player rows
+    for player_data in team1_table_data:
+        html_content += f"""
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <td style="text-align: left; padding: 8px 15px; font-weight: bold;">{player_data[0]}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{player_data[1]}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{player_data[2]}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{player_data[3]}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{player_data[4]}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{player_data[5]}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{player_data[6]}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{player_data[7]}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{player_data[8]}</td>
+                        </tr>
+        """
     
-    fig.update_xaxes(title_text="Quarter", row=2, col=1)
-    fig.update_yaxes(title_text="Points", row=2, col=1)
+    html_content += f"""
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Team 2 Player Stats Table -->
+        <div style="margin-bottom: 20px; background-color: rgba(30,30,40,0.9); padding: 15px; border-radius: 10px;">
+            <h3 style="color: #C9082A; margin-top: 0; border-bottom: 2px solid #C9082A; padding-bottom: 8px;">
+                {team2_name} Player Stats
+            </h3>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid rgba(255,255,255,0.2);">
+                            <th style="text-align: left; padding: 10px 15px; color: white;">Player</th>
+                            <th style="text-align: center; padding: 10px 15px; color: white;">PTS</th>
+                            <th style="text-align: center; padding: 10px 15px; color: white;">REB</th>
+                            <th style="text-align: center; padding: 10px 15px; color: white;">AST</th>
+                            <th style="text-align: center; padding: 10px 15px; color: white;">STL</th>
+                            <th style="text-align: center; padding: 10px 15px; color: white;">BLK</th>
+                            <th style="text-align: center; padding: 10px 15px; color: white;">FG</th>
+                            <th style="text-align: center; padding: 10px 15px; color: white;">3PT</th>
+                            <th style="text-align: center; padding: 10px 15px; color: white;">TO</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+    """
     
-    fig.update_xaxes(title_text="Players", row=2, col=2)
-    fig.update_yaxes(title_text="Points Scored", row=2, col=2)
+    # Add Team 2 player rows
+    for player_data in team2_table_data:
+        html_content += f"""
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <td style="text-align: left; padding: 8px 15px; font-weight: bold;">{player_data[0]}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{player_data[1]}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{player_data[2]}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{player_data[3]}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{player_data[4]}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{player_data[5]}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{player_data[6]}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{player_data[7]}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{player_data[8]}</td>
+                        </tr>
+        """
     
-    fig.update_xaxes(title_text="Value", row=3, col=1)
-    fig.update_yaxes(title_text="Category", row=3, col=1)
+    html_content += f"""
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Game Winner Banner -->
+        <div style="text-align: center; background-color: {winner_color}; padding: 15px; border-radius: 10px; margin-top: 20px;">
+            <h2 style="color: white; margin: 0; font-size: 28px;">
+                {winner if winner != "Tie" else "It's a Tie!"} {" Wins!" if winner != "Tie" else ""}
+            </h2>
+        </div>
+    </div>
+    """
     
-    # Improve subplot titles appearance
-    for i in fig['layout']['annotations'][:6]:  # Just the subplot titles, not the mvp/winner annotations
-        i['font'] = dict(size=16, color='#DDDDDD')
-    
-    return play_by_play_text, fig
+    # Return just the HTML content without a figure
+    return play_by_play_text, html_content
 
 def normalize_stats(df, column):
     """Helper function to normalize a column to use as probability weights"""

@@ -115,6 +115,11 @@ input, select, textarea {
     padding: 15px;
 }
 
+.full-width-plot {
+    width: 100% !important;
+    min-height: 500px !important;
+}
+
 .gradio-table {
     background-color: #1e1e1e;
 }

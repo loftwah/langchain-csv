@@ -44,6 +44,10 @@ def create_interface():
                     gr.Markdown("Find undervalued players for your fantasy draft based on statistical analysis.")
                     
                     with gr.Row():
+                        with gr.Column(scale=2):
+                            gr.Markdown("### Top Players by Value")
+                            draft_plot = gr.Plot(elem_classes=["plot-container", "full-width-plot"])
+                            
                         with gr.Column(scale=1):
                             draft_scoring = gr.Radio(
                                 choices=["standard", "points", "categories"],
@@ -60,9 +64,6 @@ def create_interface():
                                 value="PTS"
                             )
                             draft_btn = gr.Button("Find Value Players", variant="primary")
-                        
-                        with gr.Column(scale=2):
-                            draft_plot = gr.Plot(label="Top Players by Value", elem_classes=["plot-container"])
                     
                     draft_table = gr.Dataframe(label="Player Rankings")
                     
@@ -146,6 +147,11 @@ def create_interface():
                     gr.Markdown("Simulate a full NBA basketball game with your favorite players and watch the play-by-play action!")
                     
                     with gr.Row():
+                        with gr.Column(scale=2):
+                            # Replace the Plot with an HTML component
+                            gr.Markdown("### Game Stats")
+                            game_plot = gr.HTML(elem_classes=["full-width-plot"])
+                        
                         with gr.Column(scale=1):
                             gr.Markdown("### Team Setup")
                             
@@ -200,10 +206,6 @@ def create_interface():
                                 preset_playmakers = gr.Button("👀 Elite Playmakers")
                             
                             simulate_btn = gr.Button("Simulate Game!", variant="primary")
-                            
-                        with gr.Column(scale=1):
-                            # Game visualization
-                            game_plot = gr.Plot(label="Game Stats", elem_classes=["plot-container"])
                     
                     # Play-by-play results
                     play_by_play = gr.Markdown(label="Play-by-Play")
