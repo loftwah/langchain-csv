@@ -59,6 +59,17 @@ def create_interface():
                     gr.Markdown("## Weekly Matchup Analyzer")
                     gr.Markdown("Compare two fantasy teams to predict matchup outcomes.")
                     
+                    # Move preset team compositions to the top for better visibility
+                    gr.Markdown("### Quick Team Matchup Presets", elem_classes=["section-header"])
+                    gr.Markdown("Click any preset to instantly load two teams for comparison:")
+                    
+                    with gr.Row():
+                        preset1_btn = gr.Button("⭐ Stars vs All-Around", size="lg", elem_classes=["preset-button"])
+                        preset2_btn = gr.Button("🏀 Scoring vs Defense", size="lg", elem_classes=["preset-button"])
+                        preset3_btn = gr.Button("⚡ Young Guns vs Veterans", size="lg", elem_classes=["preset-button"])
+                    
+                    gr.Markdown("### Or enter your own teams:")
+                    
                     with gr.Row():
                         with gr.Column(scale=1):
                             team1 = gr.Textbox(
@@ -76,37 +87,29 @@ def create_interface():
                             )
                             matchup_btn = gr.Button("Compare Teams", variant="primary")
                     
-                    # Add preset team compositions
-                    with gr.Accordion("Preset Team Matchups", open=False):
-                        gr.Markdown("### Quick team comparison presets")
-                        with gr.Row():
-                            preset1_btn = gr.Button("Stars vs All-Around")
-                            preset2_btn = gr.Button("Scoring vs Defense")
-                            preset3_btn = gr.Button("Young Guns vs Veterans")
-                        
-                        # Define preset team compositions
-                        def load_preset_stars_allround():
-                            return {
-                                team1: "LeBron James, Kevin Durant, Stephen Curry, Kyrie Irving, Devin Booker",
-                                team2: "Nikola Jokic, Giannis Antetokounmpo, Luka Doncic, Jayson Tatum, Anthony Edwards"
-                            }
-                        
-                        def load_preset_offense_defense():
-                            return {
-                                team1: "Damian Lillard, Trae Young, Anthony Edwards, Zach LaVine, Karl-Anthony Towns",
-                                team2: "Rudy Gobert, Bam Adebayo, Draymond Green, Jrue Holiday, Mikal Bridges"
-                            }
-                        
-                        def load_preset_young_vets():
-                            return {
-                                team1: "Anthony Edwards, LaMelo Ball, Cade Cunningham, Scottie Barnes, Paolo Banchero",
-                                team2: "Chris Paul, LeBron James, Kevin Durant, Jimmy Butler, Al Horford"
-                            }
-                        
-                        # Connect preset buttons
-                        preset1_btn.click(fn=load_preset_stars_allround, outputs=[team1, team2])
-                        preset2_btn.click(fn=load_preset_offense_defense, outputs=[team1, team2])
-                        preset3_btn.click(fn=load_preset_young_vets, outputs=[team1, team2])
+                    # Define preset team compositions
+                    def load_preset_stars_allround():
+                        return {
+                            team1: "LeBron James, Kevin Durant, Stephen Curry, Kyrie Irving, Devin Booker",
+                            team2: "Nikola Jokic, Giannis Antetokounmpo, Luka Doncic, Jayson Tatum, Anthony Edwards"
+                        }
+                    
+                    def load_preset_offense_defense():
+                        return {
+                            team1: "Damian Lillard, Trae Young, Anthony Edwards, Zach LaVine, Karl-Anthony Towns",
+                            team2: "Rudy Gobert, Bam Adebayo, Draymond Green, Jrue Holiday, Mikal Bridges"
+                        }
+                    
+                    def load_preset_young_vets():
+                        return {
+                            team1: "Anthony Edwards, LaMelo Ball, Cade Cunningham, Scottie Barnes, Paolo Banchero",
+                            team2: "Chris Paul, LeBron James, Kevin Durant, Jimmy Butler, Al Horford"
+                        }
+                    
+                    # Connect preset buttons
+                    preset1_btn.click(fn=load_preset_stars_allround, outputs=[team1, team2])
+                    preset2_btn.click(fn=load_preset_offense_defense, outputs=[team1, team2])
+                    preset3_btn.click(fn=load_preset_young_vets, outputs=[team1, team2])
                     
                     matchup_result = gr.Markdown(label="Matchup Analysis")
                     matchup_plot = gr.Plot(label="Category Comparison", elem_classes=["plot-container"])
@@ -122,6 +125,22 @@ def create_interface():
                 with gr.Group(elem_classes=["content-block"]):
                     gr.Markdown("## Player Consistency Tracker")
                     gr.Markdown("Analyze a player's consistency to identify reliable starters vs. boom/bust players.")
+                    
+                    # Move player preset buttons to the top
+                    gr.Markdown("### Select a Popular Player", elem_classes=["section-header"])
+                    gr.Markdown("Click any player button to analyze their fantasy consistency:")
+                    
+                    with gr.Row():
+                        player1_btn = gr.Button("🔥 LeBron James", size="lg", elem_classes=["preset-button"])
+                        player2_btn = gr.Button("🧙‍♂️ Nikola Jokić", size="lg", elem_classes=["preset-button"])
+                        player3_btn = gr.Button("👨‍🍳 Stephen Curry", size="lg", elem_classes=["preset-button"])
+                    
+                    with gr.Row():
+                        player4_btn = gr.Button("🦌 Giannis Antetokounmpo", size="lg", elem_classes=["preset-button"])
+                        player5_btn = gr.Button("🪄 Luka Dončić", size="lg", elem_classes=["preset-button"])
+                        player6_btn = gr.Button("🦅 Joel Embiid", size="lg", elem_classes=["preset-button"])
+                    
+                    gr.Markdown("### Or analyze any other player:")
                     
                     with gr.Row():
                         with gr.Column(scale=1):
@@ -140,9 +159,63 @@ def create_interface():
                             )
                             consistency_btn = gr.Button("Analyze Player", variant="primary")
                     
+                    # Define preset player functions
+                    def set_player_lebron():
+                        return "LeBron James"
+                    
+                    def set_player_jokic():
+                        return "Nikola Jokic"  # Using standard ASCII version for maximum compatibility
+                    
+                    def set_player_curry():
+                        return "Stephen Curry"
+                    
+                    def set_player_giannis():
+                        return "Giannis Antetokounmpo"
+                    
+                    def set_player_luka():
+                        return "Luka Doncic"  # Using standard ASCII version for maximum compatibility
+                    
+                    def set_player_embiid():
+                        return "Joel Embiid"
+                    
+                    # Define output components first
                     consistency_result = gr.Markdown(label="Consistency Analysis")
                     consistency_plot = gr.Plot(label="Performance Consistency", elem_classes=["plot-container"])
                     
+                    # Auto-analyze after selecting a preset player
+                    def set_player_and_analyze(player_fn):
+                        name = player_fn()
+                        # Using default values for the other parameters
+                        result, plot = consistency_tracker(name, num_games=10, scoring_system='standard')
+                        return name, result, plot
+                    
+                    # Connect player preset buttons with auto-analysis
+                    player1_btn.click(
+                        fn=lambda: set_player_and_analyze(set_player_lebron), 
+                        outputs=[player_name, consistency_result, consistency_plot]
+                    )
+                    player2_btn.click(
+                        fn=lambda: set_player_and_analyze(set_player_jokic), 
+                        outputs=[player_name, consistency_result, consistency_plot]
+                    )
+                    player3_btn.click(
+                        fn=lambda: set_player_and_analyze(set_player_curry), 
+                        outputs=[player_name, consistency_result, consistency_plot]
+                    )
+                    player4_btn.click(
+                        fn=lambda: set_player_and_analyze(set_player_giannis), 
+                        outputs=[player_name, consistency_result, consistency_plot]
+                    )
+                    player5_btn.click(
+                        fn=lambda: set_player_and_analyze(set_player_luka), 
+                        outputs=[player_name, consistency_result, consistency_plot]
+                    )
+                    player6_btn.click(
+                        fn=lambda: set_player_and_analyze(set_player_embiid), 
+                        outputs=[player_name, consistency_result, consistency_plot]
+                    )
+                    
+                    # Regular analysis button for custom player input
                     consistency_btn.click(
                         fn=consistency_tracker,
                         inputs=[player_name, num_games, consistency_scoring],

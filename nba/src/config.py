@@ -123,4 +123,45 @@ input, select, textarea {
     color: #F7B801;
     font-weight: bold;
 }
+
+.section-header {
+    margin-top: 20px !important;
+    margin-bottom: 10px !important;
+    color: #F7B801 !important;
+    border-bottom: 1px solid #333;
+    padding-bottom: 8px;
+    font-size: 22px !important;
+    font-weight: bold !important;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.preset-button {
+    margin: 10px 5px !important;
+    background-color: #1e1e1e !important;
+    border: 2px solid #444 !important;
+    color: white !important;
+    border-radius: 8px !important;
+    padding: 15px !important;
+    font-weight: bold !important;
+    transition: all 0.3s ease !important;
+    font-size: 16px !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    min-width: 200px !important;
+    text-align: center !important;
+    cursor: pointer !important;
+}
+
+.preset-button:hover {
+    background-color: #17408B !important;
+    border-color: #F7B801 !important;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+    color: #F7B801 !important;
+}
+
+.preset-button:active {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+}
 """ 

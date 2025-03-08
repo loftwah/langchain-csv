@@ -8,7 +8,8 @@ from .api import (
     get_league_leaders, 
     get_player_stats, 
     get_player_id, 
-    get_player_games
+    get_player_games,
+    get_players
 )
 from .fantasy import calculate_fantasy_points, calculate_consistency
 
@@ -308,7 +309,14 @@ def consistency_tracker(player_name, num_games=10, scoring_system='standard'):
     player_id = get_player_id(player_name)
     
     if not player_id:
-        return f"No player found matching '{player_name}'", None
+        print(f"DEBUG: Could not find player ID for '{player_name}'. Checking available player names...")
+        # Get first 5 players from dataset as an example
+        all_players = get_players()
+        name_column = 'DISPLAY_FIRST_LAST' if 'DISPLAY_FIRST_LAST' in all_players.columns else 'full_name'
+        if name_column in all_players.columns:
+            sample_players = all_players[name_column].head(5).tolist()
+            print(f"DEBUG: Sample of available players: {sample_players}")
+        return f"No player found matching '{player_name}'. Please check the spelling and try again.", None
     
     # Get recent games
     recent_games = get_player_games(player_id, last_n_games=num_games)

@@ -43,8 +43,30 @@ def get_player_id(player_name):
     """Get player ID from name"""
     if not player_name or pd.isna(player_name) or player_name.strip() == "":
         return None
-        
+    
+    # Normalize the input name    
     player_name = player_name.strip()
+    
+    # Handle common name variations manually
+    name_variations = {
+        'nikola jokic': ['Nikola Jokic', 'Nikola Jokić'],
+        'giannis antetokounmpo': ['Giannis Antetokounmpo', 'Giannis Antetokounpo'],
+        'luka doncic': ['Luka Doncic', 'Luka Dončić'],
+        'nikola jokić': ['Nikola Jokic', 'Nikola Jokić'],
+        'luka dončić': ['Luka Doncic', 'Luka Dončić'],
+    }
+    
+    # Convert player name to lowercase for matching
+    player_name_lower = player_name.lower()
+    
+    # Check if this player has known variations
+    if player_name_lower in name_variations:
+        # This is a player with variations, so we'll try all of them
+        variation_list = name_variations[player_name_lower]
+    else:
+        # No known variations, just use the original name
+        variation_list = [player_name]
+    
     all_players = get_players()
     
     # Determine which column to use for player names
@@ -69,19 +91,39 @@ def get_player_id(player_name):
         print(f"Warning: No recognizable ID column in player data. Columns: {all_players.columns.tolist()}")
         return None
     
-    # Try exact match
-    exact_match = all_players[all_players[name_column] == player_name]
-    if not exact_match.empty:
-        return exact_match.iloc[0][id_column]
+    # Try exact match with any of the known variations
+    for variation in variation_list:
+        exact_match = all_players[all_players[name_column] == variation]
+        if not exact_match.empty:
+            return exact_match.iloc[0][id_column]
     
-    # Try contains match
+    # If no exact match, try contains match
     try:
+        # First try with the original name
         contains_match = all_players[all_players[name_column].str.contains(player_name, case=False, na=False)]
         if not contains_match.empty:
             return contains_match.iloc[0][id_column]
+        
+        # If that didn't work, try with variations
+        for variation in variation_list:
+            if variation != player_name:  # Skip the one we just tried
+                contains_match = all_players[all_players[name_column].str.contains(variation, case=False, na=False)]
+                if not contains_match.empty:
+                    return contains_match.iloc[0][id_column]
+        
+        # Last resort: try matching on just the last name for players with distinctive last names
+        if ' ' in player_name:
+            last_name = player_name.split(' ')[-1]
+            if len(last_name) > 3:  # Only try with substantial last names
+                last_name_match = all_players[all_players[name_column].str.contains(last_name, case=False, na=False)]
+                if not last_name_match.empty:
+                    print(f"Found player by last name: {last_name_match.iloc[0][name_column]}")
+                    return last_name_match.iloc[0][id_column]
+    
     except Exception as e:
         print(f"Error in string matching for player '{player_name}': {e}")
     
+    print(f"Could not find player with name '{player_name}'")
     return None
 
 def get_league_leaders(season=DEFAULT_SEASON, stat_category="PTS", per_mode="PerGame", limit=50):
@@ -126,13 +168,26 @@ def get_player_stats(season=DEFAULT_SEASON, min_games=20):
 def get_player_games(player_id, season=DEFAULT_SEASON, last_n_games=10):
     """Get last N games for a player"""
     try:
+        # PlayerGameLog doesn't accept last_n_games as a direct parameter
         gamelog = playergamelog.PlayerGameLog(
             player_id=player_id,
             season=season,
-            season_type_all_star='Regular Season',
-            last_n_games=last_n_games
+            season_type_all_star='Regular Season'
         )
-        return gamelog.get_data_frames()[0]
+        
+        # Get all games and then filter to the last N games
+        games_df = gamelog.get_data_frames()[0]
+        
+        # Return only the last N games if we have enough games
+        if not games_df.empty and len(games_df) > 0:
+            # Sort by date (newest first) if needed
+            if 'GAME_DATE' in games_df.columns:
+                games_df = games_df.sort_values('GAME_DATE', ascending=False)
+            
+            # Return only the requested number of games
+            return games_df.head(last_n_games)
+        
+        return games_df
     except Exception as e:
         print(f"Error fetching game logs for player {player_id}: {e}")
         return pd.DataFrame()
