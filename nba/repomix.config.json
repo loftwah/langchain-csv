@@ -1,0 +1,33 @@
+// repomix.config.json
+{
+    "metadata": {
+      "name": "langchain-csv-nba",
+      "version": "0.1.0",
+      "description": "A LangChain-based tool for processing NBA data and fantasy basketball analysis",
+      "author": "Dean Lofts"
+    },
+    "output": {
+      "filePath": "repomix-output.txt",
+      "style": "plain"
+    },
+    "include": [
+      "README.md",
+      "requirements.txt",
+      "src/**/*.py",
+      "fantasy-tools.py",
+      "tools/**/*.py",
+      "docs/*.md"
+    ],
+    "ignore": {
+      "useGitignore": true,
+      "useDefaultPatterns": true,
+      "customPatterns": [
+        "nba_api_cache/**",
+        "src/__pycache__/**",
+        "*.pyc",
+        "*.bin",
+        "*.pickle",
+        "chroma.sqlite3"
+      ]
+    }
+  }
