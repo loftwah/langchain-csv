@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import json
 import time
+import datetime  # Add import for datetime
 from functools import lru_cache
 from pathlib import Path
 
@@ -254,4 +255,85 @@ def get_player_career(player_id):
         return career.get_data_frames()[0]
     except Exception as e:
         print(f"Error fetching career stats for player {player_id}: {e}")
+        return pd.DataFrame()
+
+def get_player_historical_data(player_id):
+    """
+    Get historical player data when recent game logs aren't available.
+    This is a fallback for retired players or legends.
+    
+    Args:
+        player_id (int): The NBA API player ID
+        
+    Returns:
+        DataFrame: A DataFrame containing career averages formatted like game logs
+    """
+    cache_file = f"historical_{player_id}.csv"
+    
+    # Try to load from cache first
+    cached_data = load_from_cache(cache_file)
+    if cached_data is not None:
+        return cached_data
+
+    try:
+        # Get player career stats
+        career_stats = get_player_career(player_id)
+        
+        if career_stats.empty:
+            return pd.DataFrame()
+        
+        # Get regular season career averages
+        if 'SeasonType' in career_stats.columns:
+            reg_season = career_stats[career_stats['SeasonType'] == 'Regular Season']
+            if not reg_season.empty:
+                career_stats = reg_season
+        
+        # Create a single row dataframe with career averages
+        # Select only the most relevant career season (usually the one with most games played)
+        if len(career_stats) > 1:
+            if 'GP' in career_stats.columns:
+                best_season = career_stats.loc[career_stats['GP'].idxmax()]
+            else:
+                # Just take the most recent season
+                best_season = career_stats.iloc[0]
+        else:
+            best_season = career_stats.iloc[0]
+        
+        # Convert to a format similar to game logs
+        # Map career stat column names to game log format
+        best_season_df = pd.DataFrame([best_season])
+        
+        # Create 10 duplicate rows to simulate last 10 games
+        historical_data = pd.concat([best_season_df] * 10, ignore_index=True)
+        
+        # Add a GAME_DATE column for compatibility
+        historical_data['GAME_DATE'] = pd.Timestamp(datetime.date.today() - datetime.timedelta(days=10000))
+        
+        # Standard column name mapping between career stats and game logs
+        column_mapping = {
+            'PTS': 'PTS', 
+            'AST': 'AST', 
+            'REB': 'REB',
+            'STL': 'STL', 
+            'BLK': 'BLK', 
+            'FG_PCT': 'FG_PCT',
+            'FG3_PCT': 'FG3_PCT', 
+            'FT_PCT': 'FT_PCT',
+            'FGA': 'FGA', 
+            'FGM': 'FGM',
+            'FG3A': 'FG3A', 
+            'FG3M': 'FG3M'
+        }
+        
+        # Standardize column names
+        for new_col, old_col in column_mapping.items():
+            if old_col in best_season_df.columns and new_col not in historical_data.columns:
+                historical_data[new_col] = best_season_df[old_col]
+        
+        # Save to cache
+        save_to_cache(historical_data, cache_file)
+        return historical_data
+        
+    except Exception as e:
+        print(f"Error creating historical data for player {player_id}: {e}")
         return pd.DataFrame() 

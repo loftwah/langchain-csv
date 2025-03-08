@@ -6,6 +6,7 @@ numpy==1.26.0
 # Visualization
 matplotlib==3.8.0
 seaborn==0.13.0
+plotly==5.18.0
 
 # Web interface
 gradio==4.12.0
