@@ -31,10 +31,21 @@ from .game import game_simulator as refactored_game_simulator
 # Import the new consistency tracker
 from .tracker import consistency_tracker as refactored_consistency_tracker
 
-def draft_helper(scoring_system='standard', min_games=20, stat_category="PTS"):
-    """Find value players for fantasy drafts"""
-    # Get league leaders for the specified stat category
-    leaders_df = get_league_leaders(stat_category=stat_category)
+def draft_helper(num_teams=12, scoring_type='Standard Points', draft_pos=6):
+    """Find value players for fantasy drafts based on scoring type and draft position"""
+    # Default min games for player qualification
+    min_games = 20
+    
+    # Convert scoring_type to scoring_system for backend processing
+    if scoring_type == "Standard Points":
+        scoring_system = "standard"
+    elif scoring_type == "Standard Categories":
+        scoring_system = "categories"
+    else:
+        scoring_system = "custom"
+    
+    # Get league leaders for points as a default stat category
+    leaders_df = get_league_leaders(stat_category="PTS")
     
     # Get comprehensive player stats
     stats_df = get_player_stats(min_games=min_games)
@@ -56,7 +67,7 @@ def draft_helper(scoring_system='standard', min_games=20, stat_category="PTS"):
     if data_df.empty:
         return "Could not retrieve player data. API might be unavailable.", None
     
-    # Calculate fantasy points
+    # Calculate fantasy points based on scoring system
     fantasy_df = calculate_fantasy_points(data_df, scoring_system)
     
     # Calculate value metrics
@@ -87,7 +98,7 @@ def draft_helper(scoring_system='standard', min_games=20, stat_category="PTS"):
     
     # Add labels
     ax.set_xlabel('Fantasy Points per Game', color=NBA_COLORS['accent'], fontsize=12)
-    ax.set_title(f'Top 20 Players by Fantasy Value ({scoring_system.title()} Scoring)', 
+    ax.set_title(f'Top 20 Players by Fantasy Value ({scoring_type})', 
                  fontsize=16, color=NBA_COLORS['accent'], pad=20)
     ax.invert_yaxis()  # Highest value at the top
     
@@ -105,6 +116,10 @@ def draft_helper(scoring_system='standard', min_games=20, stat_category="PTS"):
         ax.text(width + 0.5, bar.get_y() + bar.get_height()/2, 
                 f"{top_df['VALUE'].iloc[i]:.2f}", 
                 ha='left', va='center', color=NBA_COLORS['accent'])
+    
+    # Add draft position information
+    ax.text(0.02, 0.02, f"Draft Position: {draft_pos} in {num_teams} team league", 
+            transform=ax.transAxes, fontsize=12, color=NBA_COLORS['highlight'])
     
     # Add Loftwah branding to the plot
     fig.text(0.95, 0.02, "Created by Loftwah", fontsize=10, 

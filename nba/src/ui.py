@@ -32,7 +32,7 @@ def create_draft_helper_ui():
             output_area = gr.Dataframe(label="Draft Rankings and Analysis")
             
     analyze_btn.click(
-        fn=lambda teams, scoring, pos: draft_helper(int(teams), scoring, int(pos)),
+        fn=lambda teams, scoring, pos: draft_helper(int(teams), scoring, int(pos))[0],
         inputs=[num_teams, scoring_type, draft_pos],
         outputs=output_area
     )
