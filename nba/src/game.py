@@ -426,10 +426,16 @@ class GameRenderer:
                     font-family: 'Roboto', Arial, sans-serif;
                     line-height: 1.6;
                     color: #333;
-                    max-width: 1200px;
-                    margin: 0 auto;
+                    margin: 0;
                     padding: 20px;
                     background-color: #f8f9fa;
+                    box-sizing: border-box;
+                    width: 100%;
+                }}
+                .container {{
+                    max-width: 100%;
+                    margin: 0 auto;
+                    overflow-x: hidden;
                 }}
                 .header {{
                     text-align: center;
@@ -496,8 +502,8 @@ class GameRenderer:
                 }}
                 .stats-container {{
                     flex: 1;
-                    max-width: 100%;
-                    overflow-x: auto;
+                    width: 100%;
+                    margin: 0 auto;
                 }}
                 .stats-table {{
                     width: 100%;
@@ -524,54 +530,59 @@ class GameRenderer:
                     padding-bottom: 5px;
                     border-bottom: 2px solid #ddd;
                 }}
+                /* Ensure tables don't overflow their containers */
+                table {{
+                    table-layout: fixed;
+                    width: 100%;
+                }}
             </style>
         </head>
         <body>
-            <div class="header">
-                <div class="game-title">Game Simulation Summary</div>
-                <div class="final-score">
-                    <div class="team-name team1">
-                        {team1.name}
-                        {f'<div class="winner-tag">WINNER</div>' if team1.score > team2.score else ''}
-                    </div>
-                    <div class="score-separator">
-                        {team1.score} - {team2.score}
-                    </div>
-                    <div class="team-name team2">
-                        {team2.name}
-                        {f'<div class="winner-tag">WINNER</div>' if team2.score > team1.score else ''}
+            <div class="container">
+                <div class="header">
+                    <div class="game-title">Game Simulation Summary</div>
+                    <div class="final-score">
+                        <div class="team-name team1">
+                            {team1.name}
+                            {f'<div class="winner-tag">WINNER</div>' if team1.score > team2.score else ''}
+                        </div>
+                        <div class="score-separator">
+                            {team1.score} - {team2.score}
+                        </div>
+                        <div class="team-name team2">
+                            {team2.name}
+                            {f'<div class="winner-tag">WINNER</div>' if team2.score > team1.score else ''}
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="section-title">Quarter Scores</div>
-            <div class="quarter-scores">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Team</th>
-                            {' '.join([f'<th>Q{i+1}</th>' for i in range(len(team1.quarter_scores))])}
-                            <th>Final</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>{team1.name}</td>
-                            {' '.join([f'<td>{score}</td>' for score in team1.quarter_scores])}
-                            <td>{team1.score}</td>
-                        </tr>
-                        <tr>
-                            <td>{team2.name}</td>
-                            {' '.join([f'<td>{score}</td>' for score in team2.quarter_scores])}
-                            <td>{team2.score}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="section-title">Team Stats Comparison</div>
-            <div class="team-stats">
-                <div class="stats-container" style="width: 100%;">
+                
+                <div class="section-title">Quarter Scores</div>
+                <div class="quarter-scores">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Team</th>
+                                {' '.join([f'<th>Q{i+1}</th>' for i in range(len(team1.quarter_scores))])}
+                                <th>Final</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{team1.name}</td>
+                                {' '.join([f'<td>{score}</td>' for score in team1.quarter_scores])}
+                                <td>{team1.score}</td>
+                            </tr>
+                            <tr>
+                                <td>{team2.name}</td>
+                                {' '.join([f'<td>{score}</td>' for score in team2.quarter_scores])}
+                                <td>{team2.score}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="section-title">Team Stats Comparison</div>
+                <div class="stats-container">
                     <table class="stats-table">
                         <thead>
                             <tr>
@@ -614,11 +625,9 @@ class GameRenderer:
                         </tbody>
                     </table>
                 </div>
-            </div>
-            
-            <div class="section-title">{team1.name} Player Stats</div>
-            <div class="team-stats">
-                <div class="stats-container" style="width: 100%;">
+                
+                <div class="section-title">{team1.name} Player Stats</div>
+                <div class="stats-container">
                     <table class="stats-table">
                         <thead>
                             <tr>
@@ -646,11 +655,9 @@ class GameRenderer:
                         </tbody>
                     </table>
                 </div>
-            </div>
-            
-            <div class="section-title">{team2.name} Player Stats</div>
-            <div class="team-stats">
-                <div class="stats-container" style="width: 100%;">
+                
+                <div class="section-title">{team2.name} Player Stats</div>
+                <div class="stats-container">
                     <table class="stats-table">
                         <thead>
                             <tr>
@@ -678,18 +685,18 @@ class GameRenderer:
                         </tbody>
                     </table>
                 </div>
+                
+                <div class="section-title">Game Synopsis</div>
+                <p>
+                    {f"The {winner} won with a final score of {team1.score}-{team2.score}." if winner != "Tie" else f"The game ended in a tie with a score of {team1.score}-{team2.score}."}
+                    {team1.name} {f"led the way with {max([p.game_stats['PTS'] for p in team1.players])} points from {max(team1.players, key=lambda p: p.game_stats['PTS']).name}" if team1.players else "had a balanced attack"}.
+                    {team2.name} {f"was paced by {max([p.game_stats['PTS'] for p in team2.players])} points from {max(team2.players, key=lambda p: p.game_stats['PTS']).name}" if team2.players else "had a balanced attack"}.
+                </p>
+                
+                <footer style="text-align: center; margin-top: 30px; font-size: 12px; color: #777;">
+                    This is a simulated game generated based on player statistics.
+                </footer>
             </div>
-            
-            <div class="section-title">Game Synopsis</div>
-            <p>
-                {f"The {winner} won with a final score of {team1.score}-{team2.score}." if winner != "Tie" else f"The game ended in a tie with a score of {team1.score}-{team2.score}."}
-                {team1.name} {f"led the way with {max([p.game_stats['PTS'] for p in team1.players])} points from {max(team1.players, key=lambda p: p.game_stats['PTS']).name}" if team1.players else "had a balanced attack"}.
-                {team2.name} {f"was paced by {max([p.game_stats['PTS'] for p in team2.players])} points from {max(team2.players, key=lambda p: p.game_stats['PTS']).name}" if team2.players else "had a balanced attack"}.
-            </p>
-            
-            <footer style="text-align: center; margin-top: 30px; font-size: 12px; color: #777;">
-                This is a simulated game generated based on player statistics.
-            </footer>
         </body>
         </html>
         """
