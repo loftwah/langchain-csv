@@ -276,6 +276,7 @@ def create_ai_features_interface():
             # Call the assistant to answer the question
             try:
                 response = assistant.answer_fantasy_question(question)
+                # Response is now a string, return it directly
                 return response
             except Exception as e:
                 return f"Error: {str(e)}"

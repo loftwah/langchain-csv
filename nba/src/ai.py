@@ -544,10 +544,10 @@ class NBAFantasyAssistant:
             
             # Parse response
             try:
-                answer = response
-                return {"answer": answer}
+                # Return the response directly as a string
+                return response
             except Exception as e:
-                return {"error": f"Failed to process response: {str(e)}"}
+                return f"Error processing response: {str(e)}"
         
         except Exception as e:
             print(f"Error answering question: {e}")
