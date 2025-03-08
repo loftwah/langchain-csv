@@ -1088,32 +1088,32 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
     # Join play-by-play into a single string
     play_by_play_text = "\n".join(play_by_play)
     
-    # Create figures with subplots
+    # Create a more complex figure with custom layout
     fig = make_subplots(
-        rows=2, 
-        cols=2,
+        rows=3, 
+        cols=3,
         specs=[
-            [{"type": "bar"}, {"type": "scatter"}],
-            [{"type": "bar"}, {"type": "polar"}]
+            [{"colspan": 3, "type": "bar"}, None, None],  # Top row: Final Score (full width)
+            [{"colspan": 1, "type": "bar"}, {"colspan": 2, "type": "scatter"}, None],  # Second row: Quarter scores + Top performers
+            [{"colspan": 1, "type": "bar"}, {"colspan": 1, "type": "polar"}, {"colspan": 1, "type": "table"}]  # Third row: Team stats, Radar, Table
         ],
         subplot_titles=[
-            "Final Score", 
-            "Top Performers",
-            "Quarter-by-Quarter Scoring", 
-            "Team Stats Comparison"
+            "Final Score",  # Row 1
+            "Quarter-by-Quarter Scoring", "Top Performers",  # Row 2
+            "Points by Category", "Team Stats Comparison", "Game Leaders"  # Row 3
         ],
-        vertical_spacing=0.18,
-        horizontal_spacing=0.12
+        vertical_spacing=0.08,
+        horizontal_spacing=0.05
     )
     
-    # 1. Final Score Bar Chart (Top Left)
+    # 1. Final Score Bar Chart (Top Row - Spanning all columns)
     fig.add_trace(
         go.Bar(
             x=[team1_name, team2_name],
             y=[team1_score, team2_score],
             text=[f"<b>{team1_score}</b>", f"<b>{team2_score}</b>"],
             textposition='auto',
-            textfont=dict(size=16),
+            textfont=dict(size=20),
             marker_color=['#17408B', '#C9082A'],
             marker_line_width=1.5,
             marker_line_color='white',
@@ -1123,57 +1123,7 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
         row=1, col=1
     )
     
-    # 2. Top Performers (Top Right)
-    # Extract top 3 scorers from each team
-    team1_top = sorted([(p, s['PTS']) for p, s in team1_game_stats.items()], key=lambda x: x[1], reverse=True)[:3]
-    team2_top = sorted([(p, s['PTS']) for p, s in team2_game_stats.items()], key=lambda x: x[1], reverse=True)[:3]
-    
-    # Combine players with their teams
-    top_players = [(p, team1_name, pts) for p, pts in team1_top] + [(p, team2_name, pts) for p, pts in team2_top]
-    
-    # Sort by points (highest first)
-    top_players.sort(key=lambda x: x[2], reverse=True)
-    
-    # Create hover text with detailed stats
-    hover_texts = []
-    player_labels = []
-    for player, team, _ in top_players:
-        # Create shorter player names for display (last name only)
-        short_name = player.split()[-1] if len(player.split()) > 1 else player
-        player_labels.append(f"{short_name} ({team[0]})")
-        
-        stats = team1_game_stats.get(player) or team2_game_stats.get(player)
-        hover_texts.append(
-            f"<b>{player}</b> ({team})<br>" +
-            f"PTS: {stats['PTS']}<br>" +
-            f"REB: {stats['REB']}<br>" +
-            f"AST: {stats['AST']}<br>" +
-            f"FG: {stats['FG']}/{stats['FGA']}<br>" +
-            f"3PT: {stats['FG3']}/{stats['FG3A']}"
-        )
-    
-    fig.add_trace(
-        go.Scatter(
-            x=[i for i in range(len(top_players))],
-            y=[p[2] for p in top_players],
-            mode='markers+text',
-            marker=dict(
-                size=[min(p[2]*1.5, 40) for p in top_players],
-                color=[('#17408B' if p[1] == team1_name else '#C9082A') for p in top_players],
-                opacity=0.8,
-                line=dict(width=2, color='white')
-            ),
-            text=player_labels,
-            textposition='bottom center',
-            textfont=dict(size=10),
-            hovertext=hover_texts,
-            hoverinfo='text',
-            name='Top Players'
-        ),
-        row=1, col=2
-    )
-    
-    # 3. Quarter-by-Quarter Scoring (Bottom Left)
+    # 2. Quarter-by-Quarter Scoring (Row 2, Col 1)
     # Calculate quarter-by-quarter scores
     quarters = [f"Q{i+1}" for i in range(4)]  # Assuming 4 quarters
     team1_quarters = []
@@ -1238,7 +1188,62 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
         row=2, col=1
     )
     
-    # 4. Team Stats Comparison (Bottom Right)
+    # 3. Top Performers Scatter Plot (Row 2, Col 2 - Spanning 2 columns)
+    # Extract top 4 scorers from each team
+    team1_top = sorted([(p, s['PTS']) for p, s in team1_game_stats.items()], key=lambda x: x[1], reverse=True)[:4]
+    team2_top = sorted([(p, s['PTS']) for p, s in team2_game_stats.items()], key=lambda x: x[1], reverse=True)[:4]
+    
+    # Combine players with their teams
+    top_players = [(p, team1_name, pts) for p, pts in team1_top] + [(p, team2_name, pts) for p, pts in team2_top]
+    
+    # Sort by points (highest first)
+    top_players.sort(key=lambda x: x[2], reverse=True)
+    top_players = top_players[:8]  # Limit to top 8 players
+    
+    # Create hover text with detailed stats
+    hover_texts = []
+    player_labels = []
+    player_x = []  # More evenly distribute players
+    
+    for i, (player, team, _) in enumerate(top_players):
+        # Create shorter player names for display (last name only)
+        short_name = player.split()[-1] if len(player.split()) > 1 else player
+        player_labels.append(f"{short_name} ({team[0]})")
+        player_x.append(i)
+        
+        stats = team1_game_stats.get(player) or team2_game_stats.get(player)
+        hover_texts.append(
+            f"<b>{player}</b> ({team})<br>" +
+            f"PTS: {stats['PTS']}<br>" +
+            f"REB: {stats['REB']}<br>" +
+            f"AST: {stats['AST']}<br>" +
+            f"FG: {stats['FG']}/{stats['FGA']}<br>" +
+            f"3PT: {stats['FG3']}/{stats['FG3A']}"
+        )
+    
+    fig.add_trace(
+        go.Scatter(
+            x=player_x,
+            y=[p[2] for p in top_players],
+            mode='markers+text',
+            marker=dict(
+                size=[min(p[2]*1.5, 40) for p in top_players],
+                color=[('#17408B' if p[1] == team1_name else '#C9082A') for p in top_players],
+                opacity=0.8,
+                line=dict(width=2, color='white')
+            ),
+            text=player_labels,
+            textposition='top center',
+            textfont=dict(size=11),
+            hovertext=hover_texts,
+            hoverinfo='text',
+            name='Top Players'
+        ),
+        row=2, col=2
+    )
+    
+    # 4. Team Stats by Category Bar Chart (Row 3, Col 1)
+    # Calculate team totals first
     team1_totals = {
         'PTS': sum(s['PTS'] for s in team1_game_stats.values()),
         'REB': sum(s['REB'] for s in team1_game_stats.values()),
@@ -1257,25 +1262,56 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
         'TO': sum(s['TO'] for s in team2_game_stats.values())
     }
     
-    # Create radar chart data
-    categories = ['PTS', 'REB', 'AST', 'STL', 'BLK']
+    # Create category-by-category comparison
+    stat_categories = ['PTS', 'REB', 'AST', 'STL', 'BLK']
+    team1_cat_values = [team1_totals[cat] for cat in stat_categories]
+    team2_cat_values = [team2_totals[cat] for cat in stat_categories]
     
+    fig.add_trace(
+        go.Bar(
+            y=stat_categories,
+            x=team1_cat_values,
+            name=team1_name,
+            marker_color='#17408B',
+            orientation='h',
+            text=team1_cat_values,
+            textposition='outside',
+            textfont=dict(size=10)
+        ),
+        row=3, col=1
+    )
+    
+    fig.add_trace(
+        go.Bar(
+            y=stat_categories,
+            x=team2_cat_values,
+            name=team2_name,
+            marker_color='#C9082A',
+            orientation='h',
+            text=team2_cat_values, 
+            textposition='outside',
+            textfont=dict(size=10)
+        ),
+        row=3, col=1
+    )
+    
+    # 5. Team Stats Comparison Radar Chart (Row 3, Col 2)
     # Normalize values for better comparison
     max_stats = {
-        cat: max(team1_totals[cat], team2_totals[cat]) for cat in categories
+        cat: max(team1_totals[cat], team2_totals[cat]) for cat in stat_categories
     }
     
     # Scale everything relative to max across both teams (with buffer)
     # Add safety check to avoid division by zero
-    team1_values = [team1_totals[cat] / max(max_stats[cat], 1) * 9 + 1 for cat in categories]
-    team2_values = [team2_totals[cat] / max(max_stats[cat], 1) * 9 + 1 for cat in categories]
+    team1_values = [team1_totals[cat] / max(max_stats[cat], 1) * 9 + 1 for cat in stat_categories]
+    team2_values = [team2_totals[cat] / max(max_stats[cat], 1) * 9 + 1 for cat in stat_categories]
     
     # Add first point to close the loop
-    categories_closed = categories + [categories[0]]
+    categories_closed = stat_categories + [stat_categories[0]]
     team1_values_closed = team1_values + [team1_values[0]]
     team2_values_closed = team2_values + [team2_values[0]]
     
-    # Create radar chart with annotations
+    # Create radar chart
     fig.add_trace(
         go.Scatterpolar(
             r=team1_values_closed,
@@ -1286,7 +1322,7 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
             opacity=0.7,
             line=dict(width=2, color='#17408B')
         ),
-        row=2, col=2
+        row=3, col=2
     )
     
     fig.add_trace(
@@ -1299,51 +1335,15 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
             opacity=0.7,
             line=dict(width=2, color='#C9082A')
         ),
-        row=2, col=2
+        row=3, col=2
     )
     
-    # Add MVP annotation with improved styling
-    fig.add_annotation(
-        xref="paper", yref="paper",
-        x=0.5, y=1.05,
-        text=f"<b>GAME MVP:</b> {mvp} ({mvp_stats['PTS']} pts, {mvp_stats['REB']} reb, {mvp_stats['AST']} ast)",
-        showarrow=False,
-        font=dict(size=18, color="#F7B801"),
-        bgcolor="rgba(0,0,0,0.5)",
-        bordercolor="#F7B801",
-        borderwidth=2,
-        borderpad=8,
-        align="center",
-        width=500,
-        height=40
-    )
-    
-    # Add winner annotation with improved styling
-    winner_color = "#17408B" if winner == team1_name else "#C9082A" if winner != "Tie" else "#555555"
-    fig.add_annotation(
-        xref="paper", yref="paper",
-        x=0.5, y=-0.08,
-        text=f"<b>{winner} WINS!</b>" if winner != "Tie" else "<b>IT'S A TIE!</b>",
-        showarrow=False,
-        font=dict(size=20, color="#FFFFFF"),
-        bgcolor=winner_color,
-        borderpad=8,
-        align="center",
-        width=350,
-        height=40
-    )
-    
-    # Add stat labels to radar chart
-    for i, cat in enumerate(categories):
-        # Convert polar to cartesian coordinates for annotations
-        angle = (i * 2 * np.pi / len(categories))
-        
+    # Add stat labels to radar chart (same as before, but with updated row/col)
+    for i, cat in enumerate(stat_categories):
         # Team 1 stats
         stat_value = team1_totals[cat]
         # Only add annotation if there's data to show
         if stat_value > 0:
-            # We'll add labels to the chart by adding small markers with text instead
-            # This is more reliable than annotations for the polar plot
             fig.add_trace(
                 go.Scatterpolar(
                     r=[team1_values[i] + 0.5],
@@ -1360,15 +1360,13 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
                     showlegend=False,
                     hoverinfo='skip'
                 ),
-                row=2, col=2
+                row=3, col=2
             )
         
         # Team 2 stats
         stat_value = team2_totals[cat]
         # Only add annotation if there's data to show
         if stat_value > 0:
-            # We'll add labels to the chart by adding small markers with text instead
-            # This is more reliable than annotations for the polar plot
             fig.add_trace(
                 go.Scatterpolar(
                     r=[team2_values[i] + 0.5],
@@ -1385,8 +1383,119 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
                     showlegend=False,
                     hoverinfo='skip'
                 ),
-                row=2, col=2
+                row=3, col=2
             )
+    
+    # 6. Game Leaders Table (Row 3, Col 3)
+    # Create a simplified table of game leaders
+    leaders = {
+        "Category": ["Points", "Rebounds", "Assists", "Steals", "Blocks"],
+        "Leader": ["", "", "", "", ""],
+        "Value": [0, 0, 0, 0, 0], 
+        "Team": ["", "", "", "", ""]
+    }
+    
+    # Find leaders for each category
+    all_players = {**team1_game_stats, **team2_game_stats}
+    
+    # Points leader
+    pts_leader = max(all_players.items(), key=lambda x: x[1]['PTS'])
+    leaders["Leader"][0] = pts_leader[0]
+    leaders["Value"][0] = pts_leader[1]['PTS']
+    leaders["Team"][0] = team1_name if pts_leader[0] in team1_game_stats else team2_name
+    
+    # Rebounds leader
+    reb_leader = max(all_players.items(), key=lambda x: x[1]['REB'])
+    leaders["Leader"][1] = reb_leader[0]
+    leaders["Value"][1] = reb_leader[1]['REB']
+    leaders["Team"][1] = team1_name if reb_leader[0] in team1_game_stats else team2_name
+    
+    # Assists leader
+    ast_leader = max(all_players.items(), key=lambda x: x[1]['AST'])
+    leaders["Leader"][2] = ast_leader[0]
+    leaders["Value"][2] = ast_leader[1]['AST']
+    leaders["Team"][2] = team1_name if ast_leader[0] in team1_game_stats else team2_name
+    
+    # Steals leader
+    stl_leader = max(all_players.items(), key=lambda x: x[1]['STL'])
+    leaders["Leader"][3] = stl_leader[0]
+    leaders["Value"][3] = stl_leader[1]['STL']
+    leaders["Team"][3] = team1_name if stl_leader[0] in team1_game_stats else team2_name
+    
+    # Blocks leader
+    blk_leader = max(all_players.items(), key=lambda x: x[1]['BLK'])
+    leaders["Leader"][4] = blk_leader[0]
+    leaders["Value"][4] = blk_leader[1]['BLK']
+    leaders["Team"][4] = team1_name if blk_leader[0] in team1_game_stats else team2_name
+    
+    # Create a leaders table with colored cells by team
+    cell_colors = []
+    for team in leaders["Team"]:
+        if team == team1_name:
+            cell_colors.append(['#17408B', '#17408B', '#17408B', '#17408B'])
+        else:
+            cell_colors.append(['#C9082A', '#C9082A', '#C9082A', '#C9082A'])
+    
+    # Format leader names (last name only)
+    short_names = []
+    for name in leaders["Leader"]:
+        name_parts = name.split()
+        short_names.append(name_parts[-1] if len(name_parts) > 1 else name)
+    
+    fig.add_trace(
+        go.Table(
+            header=dict(
+                values=["Category", "Leader", "Value", "Team"],
+                fill_color="rgba(30,30,40,0.8)",
+                align="center",
+                font=dict(color="white", size=12)
+            ),
+            cells=dict(
+                values=[
+                    leaders["Category"], 
+                    short_names, 
+                    leaders["Value"], 
+                    leaders["Team"]
+                ],
+                fill_color=['rgba(30,30,40,0.6)', cell_colors],
+                align="center",
+                font=dict(color="white", size=11),
+                height=30
+            )
+        ),
+        row=3, col=3
+    )
+    
+    # Add MVP annotation with improved styling
+    fig.add_annotation(
+        xref="paper", yref="paper",
+        x=0.5, y=1.05,
+        text=f"<b>GAME MVP:</b> {mvp} ({mvp_stats['PTS']} pts, {mvp_stats['REB']} reb, {mvp_stats['AST']} ast)",
+        showarrow=False,
+        font=dict(size=18, color="#F7B801"),
+        bgcolor="rgba(0,0,0,0.5)",
+        bordercolor="#F7B801",
+        borderwidth=2,
+        borderpad=8,
+        align="center",
+        width=600,
+        height=40
+    )
+    
+    # Add winner annotation with improved styling
+    winner_color = "#17408B" if winner == team1_name else "#C9082A" if winner != "Tie" else "#555555"
+    fig.add_annotation(
+        xref="paper", yref="paper",
+        x=0.5, y=-0.05,
+        text=f"<b>{winner} WINS!</b>" if winner != "Tie" else "<b>IT'S A TIE!</b>",
+        showarrow=False,
+        font=dict(size=20, color="#FFFFFF"),
+        bgcolor=winner_color,
+        borderpad=8,
+        align="center",
+        width=400,
+        height=40
+    )
     
     # Update layout
     fig.update_layout(
@@ -1399,8 +1508,8 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
             'font': dict(size=24, color='#F7B801')
         },
         autosize=True,
-        height=900,
-        width=1200,
+        height=1100,  # Increased height for more space
+        width=1300,
         showlegend=True,
         legend=dict(
             orientation="h",
@@ -1414,10 +1523,10 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
             borderwidth=1
         ),
         barmode='group',
-        bargap=0.35,
+        bargap=0.25,
         hovermode='closest',
         template="plotly_dark",
-        margin=dict(l=30, r=30, t=120, b=70),
+        margin=dict(l=40, r=30, t=120, b=80),
         paper_bgcolor='rgba(20,20,30,1)',
         plot_bgcolor='rgba(30,30,40,1)'
     )
@@ -1442,18 +1551,25 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
         bgcolor="rgba(30,30,30,0.8)"
     )
     
-    # Update X and Y-axis titles and font sizes
-    fig.update_xaxes(title_text="Teams", title_font=dict(size=14), tickfont=dict(size=12), row=1, col=1)
-    fig.update_yaxes(title_text="Points", title_font=dict(size=14), tickfont=dict(size=12), row=1, col=1)
+    # Update axes styling
+    fig.update_xaxes(title_font=dict(size=14), tickfont=dict(size=12))
+    fig.update_yaxes(title_font=dict(size=14), tickfont=dict(size=12))
     
-    fig.update_xaxes(title_text="Players", title_font=dict(size=14), tickfont=dict(size=12), row=1, col=2)
-    fig.update_yaxes(title_text="Points Scored", title_font=dict(size=14), tickfont=dict(size=12), row=1, col=2)
+    # Specific axis labels
+    fig.update_xaxes(title_text="Teams", row=1, col=1)
+    fig.update_yaxes(title_text="Final Score", row=1, col=1)
     
-    fig.update_xaxes(title_text="Quarter", title_font=dict(size=14), tickfont=dict(size=12), row=2, col=1)
-    fig.update_yaxes(title_text="Points per Quarter", title_font=dict(size=14), tickfont=dict(size=12), row=2, col=1)
+    fig.update_xaxes(title_text="Quarter", row=2, col=1)
+    fig.update_yaxes(title_text="Points", row=2, col=1)
+    
+    fig.update_xaxes(title_text="Players", row=2, col=2)
+    fig.update_yaxes(title_text="Points Scored", row=2, col=2)
+    
+    fig.update_xaxes(title_text="Value", row=3, col=1)
+    fig.update_yaxes(title_text="Category", row=3, col=1)
     
     # Improve subplot titles appearance
-    for i in fig['layout']['annotations']:
+    for i in fig['layout']['annotations'][:6]:  # Just the subplot titles, not the mvp/winner annotations
         i['font'] = dict(size=16, color='#DDDDDD')
     
     return play_by_play_text, fig
