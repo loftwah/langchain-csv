@@ -47,6 +47,9 @@ def create_ai_features_interface():
                 )
                 
             with gr.Column(scale=2):
+                # Loading indicator
+                analysis_loading = gr.Markdown("", elem_id="analysis_loading_indicator")
+                
                 # Output components
                 player_summary = gr.Markdown(label="Summary")
                 
@@ -69,6 +72,7 @@ def create_ai_features_interface():
         def analyze_player(player_name):
             if not player_name or player_name.strip() == "":
                 return (
+                    "",  # Clear loading indicator
                     "Please enter a player name",
                     "No strengths to display",
                     "No weaknesses to display",
@@ -78,6 +82,7 @@ def create_ai_features_interface():
             
             if not is_ai_available:
                 return (
+                    "",  # Clear loading indicator 
                     "⚠️ AI Not Available - Please start Ollama with: `ollama run llama3.2`",
                     "AI Not Available",
                     "AI Not Available",
@@ -90,6 +95,7 @@ def create_ai_features_interface():
             
             if "error" in analysis:
                 return (
+                    "",  # Clear loading indicator
                     f"Error: {analysis['error']}",
                     "Error retrieving strengths",
                     "Error retrieving weaknesses",
@@ -119,6 +125,7 @@ def create_ai_features_interface():
                 comparable_text += f"{i+1}. {player}\n"
             
             return (
+                "",  # Clear loading indicator
                 analysis.get("summary", "No summary available"),
                 strengths_text,
                 weaknesses_text,
@@ -126,10 +133,17 @@ def create_ai_features_interface():
                 comparable_text
             )
         
+        # Add loading state to analyze button
         analyze_button.click(
-            analyze_player,
+            # When button is clicked, show loading indicator first
+            fn=lambda name: ("🔄 **Analyzing player...**\n\nThis may take a few moments as the LLM processes the data.", "", "", "", "", ""),
             inputs=[player_name_input],
-            outputs=[player_summary, strengths_md, weaknesses_md, draft_advice, comparable_players]
+            outputs=[analysis_loading, player_summary, strengths_md, weaknesses_md, draft_advice, comparable_players]
+        ).then(
+            # Then run the actual analysis
+            fn=analyze_player,
+            inputs=[player_name_input],
+            outputs=[analysis_loading, player_summary, strengths_md, weaknesses_md, draft_advice, comparable_players]
         )
     
     # Matchup Analysis Tab
@@ -188,18 +202,21 @@ def create_ai_features_interface():
         team2_preset3.click(lambda: get_preset_team("Offensive Team"), inputs=[], outputs=[team2_players])
         
         analyze_matchup_button = gr.Button("Analyze Matchup", variant="primary")
+        
+        # Add loading indicator
+        matchup_loading = gr.Markdown("", elem_id="matchup_loading_indicator")
         matchup_analysis = gr.Markdown(label="Matchup Analysis")
         
         def analyze_teams_matchup(team1_name, team1_input, team2_name, team2_input):
             if not is_ai_available:
-                return "⚠️ AI Not Available - Please start Ollama with: `ollama run llama3.2`"
+                return "", "⚠️ AI Not Available - Please start Ollama with: `ollama run llama3.2`"
             
             # Parse team players
             team1_list = [p.strip() for p in team1_input.split(",") if p.strip()]
             team2_list = [p.strip() for p in team2_input.split(",") if p.strip()]
             
             if not team1_list or not team2_list:
-                return "Please enter players for both teams"
+                return "", "Please enter players for both teams"
             
             # Call the assistant to analyze the matchup
             analysis = assistant.analyze_matchup(
@@ -209,12 +226,19 @@ def create_ai_features_interface():
                 team2_name
             )
             
-            return analysis
+            return "", analysis
         
+        # Add loading state to analyze matchup button
         analyze_matchup_button.click(
-            analyze_teams_matchup,
+            # When button is clicked, show loading indicator
+            fn=lambda: ("🔄 **Analyzing matchup...**\n\nThis may take a moment while the AI evaluates both teams.", ""),
+            inputs=[],
+            outputs=[matchup_loading, matchup_analysis]
+        ).then(
+            # Then run the actual analysis
+            fn=analyze_teams_matchup,
             inputs=[team1_name, team1_players, team2_name, team2_players],
-            outputs=[matchup_analysis]
+            outputs=[matchup_loading, matchup_analysis]
         )
     
     # Fantasy Assistant Tab
@@ -253,6 +277,8 @@ def create_ai_features_interface():
                 ask_btn = gr.Button("Ask Assistant", variant="primary")
                 
             with gr.Column(scale=3):
+                # Add loading indicator
+                assistant_loading = gr.Markdown("", elem_id="assistant_loading_indicator", elem_classes=["loading-indicator"])
                 assistant_response = gr.Markdown(label="Assistant Response")
         
         # Set up preset question button handlers
@@ -268,23 +294,30 @@ def create_ai_features_interface():
         # Handle ask button click
         def ask_fantasy_assistant(question):
             if not question or question.strip() == "":
-                return "Please enter a question."
+                return "", "Please enter a question."
                 
             if not is_ai_available:
-                return "⚠️ AI Not Available - Please start Ollama with: `ollama run llama3.2`"
+                return "", "⚠️ AI Not Available - Please start Ollama with: `ollama run llama3.2`"
                 
             # Call the assistant to answer the question
             try:
                 response = assistant.answer_fantasy_question(question)
                 # Response is now a string, return it directly
-                return response
+                return "", response
             except Exception as e:
-                return f"Error: {str(e)}"
+                return "", f"Error: {str(e)}"
                 
+        # Add loading state to ask button
         ask_btn.click(
-            ask_fantasy_assistant,
+            # When button is clicked, show loading indicator
+            fn=lambda: ("🔄 **Thinking...**\n\nThe AI assistant is processing your question.", ""),
+            inputs=[],
+            outputs=[assistant_loading, assistant_response]
+        ).then(
+            # Then run the actual query
+            fn=ask_fantasy_assistant,
             inputs=[user_question],
-            outputs=[assistant_response]
+            outputs=[assistant_loading, assistant_response]
         )
     
     return is_ai_available
