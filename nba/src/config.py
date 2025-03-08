@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 # Create a cache directory
 CACHE_DIR = "nba_api_cache"
@@ -22,6 +23,82 @@ DEFAULT_NUM_GAMES_ANALYSIS = 10
 
 # Default season
 DEFAULT_SEASON = "2023-24"
+
+# Game simulator configuration
+GAME_CONFIG = {
+    'default_quarters': 4,
+    'default_quarter_length': 12,
+    'possessions_per_minute': 2.2,  # Average possessions per minute
+    'shot_types': {
+        'three_point': {
+            'probability': 0.25,
+            'points': 3,
+            'default_fg_pct': 0.35
+        },
+        'mid_range': {
+            'probability': 0.25,
+            'points': 2,
+            'default_fg_pct': 0.45
+        },
+        'layup': {
+            'probability': 0.25,
+            'points': 2,
+            'default_fg_pct': 0.55
+        },
+        'dunk': {
+            'probability': 0.1,
+            'points': 2,
+            'default_fg_pct': 0.85
+        }
+    },
+    'play_types': {
+        'shot': 0.7,
+        'pass': 0.2,
+        'turnover': 0.1
+    },
+    'rebound_chances': {
+        'offensive': 0.25,
+        'defensive': 0.75
+    },
+    'and_one_probability': 0.15,
+    'foul_probability': {
+        'three_point': 0.08,
+        'mid_range': 0.08,
+        'layup': 0.25,
+        'dunk': 0.25
+    }
+}
+
+# API cache configuration
+CACHE_CONFIG = {
+    'default_timeout': 7 * 24 * 60 * 60,  # 7 days in seconds
+    'player_data_timeout': 7 * 24 * 60 * 60,  # 7 days
+    'game_data_timeout': 24 * 60 * 60,  # 1 day
+    'seasonal_data_timeout': 24 * 60 * 60,  # 1 day
+    'historical_data_timeout': 365 * 24 * 60 * 60,  # 1 year
+}
+
+# Consistency tracker configuration
+CONSISTENCY_CONFIG = {
+    'min_data_points': 5,
+    'consistency_thresholds': [
+        (0, 20, 'Very Inconsistent', '#FF3030'),
+        (20, 40, 'Inconsistent', '#FF8C00'),
+        (40, 60, 'Moderate', '#FFFF00'),
+        (60, 80, 'Consistent', '#7CFC00'),
+        (80, 100, 'Very Consistent', '#00FF7F')
+    ]
+}
+
+# Notable NBA players for enhanced commentary
+NOTABLE_PLAYERS = [
+    "Michael Jordan", "Kobe Bryant", "LeBron James", "Magic Johnson", 
+    "Larry Bird", "Wilt Chamberlain", "Kareem Abdul-Jabbar", "Hakeem Olajuwon", 
+    "Shaquille O'Neal", "Bill Russell", "Tim Duncan", "Julius Erving", 
+    "Stephen Curry", "Kevin Durant", "Oscar Robertson", "Jerry West",
+    "Allen Iverson", "Charles Barkley", "Dirk Nowitzki", "John Stockton",
+    "Giannis Antetokounmpo", "Nikola Jokic", "Luka Doncic", "Joel Embiid"
+]
 
 # Custom CSS for Gradio interface
 CUSTOM_CSS = """

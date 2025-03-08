@@ -109,15 +109,41 @@ The application is built using:
 - Matplotlib and Seaborn for data visualization
 - Gradio for the interactive web interface
 
-### Code Structure
+## Code Structure
 
 - `fantasy-tools.py` - Main entry point with animated startup
 - `src/api.py` - NBA API interaction with caching
+- `src/api_cache.py` - Enhanced API caching with decorator pattern
 - `src/ui.py` - Gradio UI components
-- `src/tools.py` - Core analysis tools
-- `src/config.py` - Configuration and styling
+- `src/tools.py` - Core analysis tools wrappers
+- `src/game.py` - Game simulation engine with object-oriented design
+- `src/tracker.py` - Consistency tracking with object-oriented design
+- `src/config.py` - Configuration and styling with centralized parameters
 - `src/fantasy.py` - Fantasy basketball calculations
 - `tools/` - Utility scripts for documentation and demos
+
+### Architectural Improvements
+
+The codebase follows these design principles:
+- **Modularity**: Components are broken down into smaller, focused modules
+- **Object-Oriented Design**: Classes represent core domain concepts like Players and Teams
+- **Separation of Concerns**: UI, business logic, and data access are separated
+- **Configuration Management**: Centralized configuration with sensible defaults
+- **Consistent Error Handling**: Robust error handling and graceful fallbacks
+- **Clean API**: Well-documented interfaces between components
+
+#### Object Model
+
+The simulator uses a clean object model with classes including:
+- `Player`: Represents NBA players with stats and game performance
+- `Team`: Collection of players with team-level statistics
+- `GameState`: Tracks the state of an ongoing simulation
+- `PlayGenerator`: Generates realistic basketball plays
+- `GameRenderer`: Formats output in different presentations
+- `GameSimulator`: Coordinates the simulation process
+
+The consistency tracker uses:
+- `ConsistencyTracker`: Analyzes player fantasy performance patterns
 
 ## Roadmap
 
@@ -127,6 +153,18 @@ Planned features for future releases:
 - Player injury impact analysis
 - Trade value calculator
 - Custom league settings support
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](./docs/CONTRIBUTING.md) for details.
+
+Some ways to contribute:
+- Add new fantasy basketball tools
+- Enhance existing statistical models
+- Improve UI/UX design
+- Fix bugs and issues
+- Extend documentation
+- Add tests
 
 ## License
 
