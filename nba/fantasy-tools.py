@@ -11,6 +11,9 @@ import os
 import threading
 import subprocess
 
+# Set tokenizers parallelism to avoid warnings
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 # Import from our refactored package
 from src.ui import create_interface
 
@@ -76,10 +79,11 @@ if __name__ == "__main__":
         print_with_animation(f"⚠️ Warning: Could not load static player data: {e}")
         print_with_animation("Will attempt to use API endpoints directly.")
     
-    # Check Ollama in a separate thread to not block startup
-    threading.Thread(target=check_ollama_availability, daemon=True).start()
-    
     print_with_animation("Setting up interface...", 0.03)
+    
+    # Check Ollama in the main thread to avoid overlapping messages
+    is_ollama_available = check_ollama_availability()
+    
     demo = create_interface()
     print_with_animation("🚀 Launching interface... Opening in your browser!", 0.03)
     demo.launch(share=False, inbrowser=True) 

@@ -221,7 +221,8 @@ def create_ai_features_interface():
     with gr.Tab("Fantasy Assistant"):
         chat_history = gr.Chatbot(
             label="Chat with Fantasy Assistant",
-            height=500
+            height=500,
+            type="messages"
         )
         
         with gr.Row():
@@ -262,14 +263,16 @@ def create_ai_features_interface():
         
         def chat_with_assistant(message, history):
             if not is_ai_available:
-                history.append((message, "⚠️ AI Not Available - Please start Ollama with: `ollama run llama3.2`"))
+                history.append({"role": "user", "content": message})
+                history.append({"role": "assistant", "content": "⚠️ AI Not Available - Please start Ollama with: `ollama run llama3.2`"})
                 return history, ""
             
             # Get answer from assistant
             answer = assistant.answer_fantasy_question(message)
             
-            # Update history
-            history.append((message, answer))
+            # Update history with the new messages format
+            history.append({"role": "user", "content": message})
+            history.append({"role": "assistant", "content": answer})
             
             return history, ""
         
