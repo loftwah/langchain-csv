@@ -575,7 +575,7 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
     team2_df = pd.DataFrame(team2_stats) if team2_stats else pd.DataFrame()
     
     if team1_df.empty or team2_df.empty:
-        return "Could not find enough player data. Check player names and try again.", None
+        return "Could not find enough player data. Check player names and try again.", "<div style='text-align:center; padding:20px; background-color:#1e1e1e; color:white; border-radius:10px;'><h2>⚠️ Simulation Error</h2><p>Insufficient player data available. Please check player names and try again.</p></div>"
     
     # List of recognized NBA legends for enhanced gameplay description
     legends = [
@@ -591,8 +591,8 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
     team2_score = 0
     
     # Initialize team game stats
-    team1_game_stats = {player: {'PTS': 0, 'AST': 0, 'REB': 0, 'FG': 0, 'FGA': 0, 'FG3': 0, 'FG3A': 0, 'FT': 0, 'FTA': 0, 'TO': 0, 'STL': 0, 'BLK': 0} for player in team1_df['PLAYER_NAME']} if not team1_df.empty else {}
-    team2_game_stats = {player: {'PTS': 0, 'AST': 0, 'REB': 0, 'FG': 0, 'FGA': 0, 'FG3': 0, 'FG3A': 0, 'FT': 0, 'FTA': 0, 'TO': 0, 'STL': 0, 'BLK': 0} for player in team2_df['PLAYER_NAME']} if not team2_df.empty else {}
+    team1_game_stats = {player: {'PTS': 0, 'AST': 0, 'REB': 0, 'FG': 0, 'FGA': 0, 'FG3': 0, 'FG3A': 0, 'FT': 0, 'FTA': 0, 'TO': 0, 'STL': 0, 'BLK': 0} for player in team1_df['PLAYER_NAME']}
+    team2_game_stats = {player: {'PTS': 0, 'AST': 0, 'REB': 0, 'FG': 0, 'FGA': 0, 'FG3': 0, 'FG3A': 0, 'FT': 0, 'FTA': 0, 'TO': 0, 'STL': 0, 'BLK': 0} for player in team2_df['PLAYER_NAME']}
     
     # Each play will be stored as text in this list
     play_by_play = []
@@ -606,13 +606,21 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
         if column not in df.columns or df.empty:
             # Return equal probability for each player
             return [1.0 / len(df)] * len(df)
-    
+        
+        values = df[column].values
+        # Replace NaNs with minimum value
+        values[np.isnan(values)] = np.nanmin(values) if np.nanmin(values) > 0 else 0.1
+        # Ensure no negative values
+        values = np.maximum(values, 0.1)
+        # Normalize to sum to 1
+        return values / np.sum(values)
+
     # Calculate team offensive and defensive ratings
-    team1_off_rtg = team1_df['PTS'].sum() / len(team1_df)
-    team2_off_rtg = team2_df['PTS'].sum() / len(team2_df)
+    team1_off_rtg = team1_df['PTS'].sum() / len(team1_df) if 'PTS' in team1_df.columns else 25
+    team2_off_rtg = team2_df['PTS'].sum() / len(team2_df) if 'PTS' in team2_df.columns else 25
     
-    team1_def_rtg = team1_df['STL'].sum() + team1_df['BLK'].sum()
-    team2_def_rtg = team2_df['STL'].sum() + team2_df['BLK'].sum()
+    team1_def_rtg = team1_df['STL'].sum() + team1_df['BLK'].sum() if 'STL' in team1_df.columns and 'BLK' in team1_df.columns else 5
+    team2_def_rtg = team2_df['STL'].sum() + team2_df['BLK'].sum() if 'STL' in team2_df.columns and 'BLK' in team2_df.columns else 5
     
     # Possession variables
     team1_possessions = []
@@ -630,6 +638,10 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
     # Simulate each quarter
     for quarter in range(1, quarters + 1):
         play_by_play.append(f"\n## Quarter {quarter}")
+        
+        # Initialize quarter scores
+        quarter_team1_score = 0
+        quarter_team2_score = 0
         
         # Calculate possessions for the quarter (random but based on team pace)
         possessions = int(quarter_length * 2.2)  # ~2.2 possessions per minute
@@ -669,7 +681,7 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
             
             # Adjust probabilities based on player stats
             if 'FG3M' in off_ratings.columns:
-                three_tendency = off_ratings.loc[player_idx, 'FG3M'] / off_ratings.loc[player_idx, 'PTS'] * 3
+                three_tendency = off_ratings.loc[player_idx, 'FG3M'] / max(1, off_ratings.loc[player_idx, 'PTS']) * 3
                 play_probs[0] = max(0.1, min(0.4, three_tendency * 0.8))
             
             play_probs = [p/sum(play_probs) for p in play_probs]  # Normalize probabilities
@@ -812,7 +824,7 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
                         made_fts = 0
                         
                         # Calculate free throw percentage (use 75% if not available)
-                        ft_pct = 0.75  # Default if can't find player's FT%
+                        ft_pct = off_ratings.loc[player_idx, 'FT_PCT'] if 'FT_PCT' in off_ratings.columns else 0.75
                         
                         # Simulate free throws
                         for _ in range(ft_attempts):
@@ -919,7 +931,7 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
                             play_text += f" AND ONE! Foul on {defender}!"
                             
                             # Shoot one free throw
-                            ft_pct = 0.75  # Default if no specific FT% available
+                            ft_pct = off_ratings.loc[player_idx, 'FT_PCT'] if 'FT_PCT' in off_ratings.columns else 0.75
                             made_ft = 1 if np.random.random() < ft_pct else 0
                             
                             # Update stats
@@ -951,7 +963,7 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
                             
                             # Determine number of free throws
                             ft_attempts = 3 if play_type == 'three_point' else 2
-                            ft_pct = 0.75  # Default FT percentage
+                            ft_pct = off_ratings.loc[player_idx, 'FT_PCT'] if 'FT_PCT' in off_ratings.columns else 0.75
                             made_fts = 0
                             
                             # Simulate free throws
@@ -984,8 +996,10 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
             # Update team scores
             if offensive_team == team1_name and points_scored > 0:
                 team1_score += points_scored
+                quarter_team1_score += points_scored  # Update quarter score
             elif offensive_team == team2_name and points_scored > 0:
                 team2_score += points_scored
+                quarter_team2_score += points_scored  # Update quarter score
             
             # Format the possession with score
             possession_text = f"{offensive_team} {team1_score}-{team2_score} {defensive_team}: {play_text}"
@@ -1008,6 +1022,10 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
             elif poss == int(possessions * 0.7):
                 play_by_play.append(f"\n**Current Score:** {team1_name} {team1_score} - {team2_score} {team2_name}")
                 
+        # Record quarter scores for visualization
+        team1_quarter_scores.append(quarter_team1_score)
+        team2_quarter_scores.append(quarter_team2_score)
+        
         # End of quarter summary
         play_by_play.append(f"\n### End of Quarter {quarter}")
         play_by_play.append(f"**Score:** {team1_name} {team1_score} - {team2_score} {team2_name}")
@@ -1088,9 +1106,7 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
     # Join play-by-play into a single string
     play_by_play_text = "\n".join(play_by_play)
     
-    # Build a comprehensive HTML-based visualization with multiple charts and tables
-    # This uses HTML which will render properly in Gradio
-    
+    # Create an enhanced HTML visualization
     # Extract top scorers from each team
     team1_top = sorted([(p, s['PTS']) for p, s in team1_game_stats.items()], key=lambda x: x[1], reverse=True)
     team2_top = sorted([(p, s['PTS']) for p, s in team2_game_stats.items()], key=lambda x: x[1], reverse=True)
@@ -1125,120 +1141,48 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
         winner = "Tie"
         winner_color = "#F7B801"  # Gold color for tie
     
-    # Create a bar chart for the final score
-    final_score_fig = go.Figure()
-    final_score_fig.add_trace(
-        go.Bar(
-            x=[team1_name, team2_name],
-            y=[team1_score, team2_score],
-            text=[f"<b>{team1_score}</b>", f"<b>{team2_score}</b>"],
-            textposition='auto',
-            textfont=dict(size=28),
-            marker_color=['#17408B', '#C9082A'],
-            marker_line_width=2,
-            marker_line_color='white',
-            width=[0.6, 0.6]
-        )
-    )
-    
-    final_score_fig.update_layout(
-        title={
-            'text': f"<b>{team1_name} vs {team2_name}</b>: {team1_score}-{team2_score}",
-            'y':0.95,
-            'x':0.5,
-            'xanchor': 'center',
-            'yanchor': 'top',
-            'font': {'size': 24, 'color': '#F7B801'}
-        },
-        height=300,
-        template="plotly_dark",
-        margin=dict(l=40, r=40, t=80, b=20),
-        paper_bgcolor='rgba(20,20,30,1)',
-        plot_bgcolor='rgba(30,30,40,1)',
-    )
-    
-    # Create a bar chart for the team stats comparison
-    categories = ['PTS', 'REB', 'AST', 'STL', 'BLK']
-    team_stats_fig = go.Figure()
-    team_stats_fig.add_trace(
-        go.Bar(
-            y=categories,
-            x=[team1_totals[cat] for cat in categories],
-            orientation='h',
-            name=team1_name,
-            marker_color='#17408B',
-            text=[team1_totals[cat] for cat in categories],
-            textposition='outside'
-        )
-    )
-    
-    team_stats_fig.add_trace(
-        go.Bar(
-            y=categories,
-            x=[team2_totals[cat] for cat in categories],
-            orientation='h',
-            name=team2_name,
-            marker_color='#C9082A',
-            text=[team2_totals[cat] for cat in categories],
-            textposition='outside'
-        )
-    )
-    
-    team_stats_fig.update_layout(
-        title="Team Stat Comparison",
-        height=350,
-        barmode='group',
-        template="plotly_dark",
-        margin=dict(l=40, r=40, t=60, b=40),
-        paper_bgcolor='rgba(20,20,30,1)',
-        plot_bgcolor='rgba(30,30,40,1)'
-    )
-    
-    # Create a table with detailed player stats for Team 1
-    team1_table_data = []
-    for player, stats in sorted(team1_game_stats.items(), key=lambda x: x[1]['PTS'], reverse=True):
-        fg_pct = f"{(stats['FG']/stats['FGA']*100):.1f}%" if stats['FGA'] > 0 else "0.0%"
-        fg3_pct = f"{(stats['FG3']/stats['FG3A']*100):.1f}%" if stats['FG3A'] > 0 else "0.0%"
-        ft_pct = f"{(stats['FT']/stats['FTA']*100):.1f}%" if stats['FTA'] > 0 else "0.0%"
-        row = [
-            player,
-            stats['PTS'],
-            stats['REB'],
-            stats['AST'],
-            stats['STL'],
-            stats['BLK'],
-            f"{stats['FG']}/{stats['FGA']} ({fg_pct})",
-            f"{stats['FG3']}/{stats['FG3A']} ({fg3_pct})",
-            stats['TO']
-        ]
-        team1_table_data.append(row)
-    
-    # Create a table with detailed player stats for Team 2
-    team2_table_data = []
-    for player, stats in sorted(team2_game_stats.items(), key=lambda x: x[1]['PTS'], reverse=True):
-        fg_pct = f"{(stats['FG']/stats['FGA']*100):.1f}%" if stats['FGA'] > 0 else "0.0%"
-        fg3_pct = f"{(stats['FG3']/stats['FG3A']*100):.1f}%" if stats['FG3A'] > 0 else "0.0%"
-        ft_pct = f"{(stats['FT']/stats['FTA']*100):.1f}%" if stats['FTA'] > 0 else "0.0%"
-        row = [
-            player,
-            stats['PTS'],
-            stats['REB'],
-            stats['AST'],
-            stats['STL'],
-            stats['BLK'],
-            f"{stats['FG']}/{stats['FGA']} ({fg_pct})",
-            f"{stats['FG3']}/{stats['FG3A']} ({fg3_pct})",
-            stats['TO']
-        ]
-        team2_table_data.append(row)
-    
-    # Create a figure that contains ALL the visualizations using HTML
+    # Create a fancy HTML visualization
     html_content = f"""
     <div style="font-family: Arial, sans-serif; padding: 20px; color: white; background-color: #121212;">
         <!-- Title Banner -->
         <div style="background: linear-gradient(90deg, #17408B, #C9082A); padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px;">
             <h1 style="color: white; margin: 0; font-size: 28px;">{team1_name} vs {team2_name}</h1>
             <h2 style="color: #F7B801; margin: 10px 0 0 0; font-size: 24px;">Final Score: {team1_score} - {team2_score}</h2>
+        </div>
+        
+        <!-- Quarter by Quarter Breakdown -->
+        <div style="background-color: rgba(40, 40, 50, 0.8); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+            <h2 style="color: white; margin-top: 0; text-align: center;">Quarter by Quarter</h2>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                <thead>
+                    <tr style="border-bottom: 2px solid rgba(255,255,255,0.3);">
+                        <th style="padding: 8px; text-align: left; color: #F7B801;">Team</th>
+                        <th style="padding: 8px; text-align: center; color: #F7B801;">Q1</th>
+                        <th style="padding: 8px; text-align: center; color: #F7B801;">Q2</th>
+                        <th style="padding: 8px; text-align: center; color: #F7B801;">Q3</th>
+                        <th style="padding: 8px; text-align: center; color: #F7B801;">Q4</th>
+                        <th style="padding: 8px; text-align: center; color: #F7B801;">Final</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <td style="padding: 8px; text-align: left; font-weight: bold; color: #17408B;">{team1_name}</td>
+                        <td style="padding: 8px; text-align: center;">{team1_quarter_scores[0] if len(team1_quarter_scores) > 0 else 0}</td>
+                        <td style="padding: 8px; text-align: center;">{team1_quarter_scores[1] if len(team1_quarter_scores) > 1 else 0}</td>
+                        <td style="padding: 8px; text-align: center;">{team1_quarter_scores[2] if len(team1_quarter_scores) > 2 else 0}</td>
+                        <td style="padding: 8px; text-align: center;">{team1_quarter_scores[3] if len(team1_quarter_scores) > 3 else 0}</td>
+                        <td style="padding: 8px; text-align: center; font-weight: bold;">{team1_score}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px; text-align: left; font-weight: bold; color: #C9082A;">{team2_name}</td>
+                        <td style="padding: 8px; text-align: center;">{team2_quarter_scores[0] if len(team2_quarter_scores) > 0 else 0}</td>
+                        <td style="padding: 8px; text-align: center;">{team2_quarter_scores[1] if len(team2_quarter_scores) > 1 else 0}</td>
+                        <td style="padding: 8px; text-align: center;">{team2_quarter_scores[2] if len(team2_quarter_scores) > 2 else 0}</td>
+                        <td style="padding: 8px; text-align: center;">{team2_quarter_scores[3] if len(team2_quarter_scores) > 3 else 0}</td>
+                        <td style="padding: 8px; text-align: center; font-weight: bold;">{team2_score}</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
         
         <!-- MVP Section -->
@@ -1335,18 +1279,21 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
     """
     
     # Add Team 1 player rows
-    for player_data in team1_table_data:
+    for player, stats in sorted(team1_game_stats.items(), key=lambda x: x[1]['PTS'], reverse=True):
+        fg_pct = f"{(stats['FG']/stats['FGA']*100):.1f}%" if stats['FGA'] > 0 else "0.0%"
+        fg3_pct = f"{(stats['FG3']/stats['FG3A']*100):.1f}%" if stats['FG3A'] > 0 else "0.0%"
+        
         html_content += f"""
                         <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                            <td style="text-align: left; padding: 8px 15px; font-weight: bold;">{player_data[0]}</td>
-                            <td style="text-align: center; padding: 8px 15px;">{player_data[1]}</td>
-                            <td style="text-align: center; padding: 8px 15px;">{player_data[2]}</td>
-                            <td style="text-align: center; padding: 8px 15px;">{player_data[3]}</td>
-                            <td style="text-align: center; padding: 8px 15px;">{player_data[4]}</td>
-                            <td style="text-align: center; padding: 8px 15px;">{player_data[5]}</td>
-                            <td style="text-align: center; padding: 8px 15px;">{player_data[6]}</td>
-                            <td style="text-align: center; padding: 8px 15px;">{player_data[7]}</td>
-                            <td style="text-align: center; padding: 8px 15px;">{player_data[8]}</td>
+                            <td style="text-align: left; padding: 8px 15px; font-weight: bold;">{player}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{stats['PTS']}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{stats['REB']}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{stats['AST']}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{stats['STL']}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{stats['BLK']}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{stats['FG']}/{stats['FGA']} ({fg_pct})</td>
+                            <td style="text-align: center; padding: 8px 15px;">{stats['FG3']}/{stats['FG3A']} ({fg3_pct})</td>
+                            <td style="text-align: center; padding: 8px 15px;">{stats['TO']}</td>
                         </tr>
         """
     
@@ -1380,18 +1327,21 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
     """
     
     # Add Team 2 player rows
-    for player_data in team2_table_data:
+    for player, stats in sorted(team2_game_stats.items(), key=lambda x: x[1]['PTS'], reverse=True):
+        fg_pct = f"{(stats['FG']/stats['FGA']*100):.1f}%" if stats['FGA'] > 0 else "0.0%"
+        fg3_pct = f"{(stats['FG3']/stats['FG3A']*100):.1f}%" if stats['FG3A'] > 0 else "0.0%"
+        
         html_content += f"""
                         <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                            <td style="text-align: left; padding: 8px 15px; font-weight: bold;">{player_data[0]}</td>
-                            <td style="text-align: center; padding: 8px 15px;">{player_data[1]}</td>
-                            <td style="text-align: center; padding: 8px 15px;">{player_data[2]}</td>
-                            <td style="text-align: center; padding: 8px 15px;">{player_data[3]}</td>
-                            <td style="text-align: center; padding: 8px 15px;">{player_data[4]}</td>
-                            <td style="text-align: center; padding: 8px 15px;">{player_data[5]}</td>
-                            <td style="text-align: center; padding: 8px 15px;">{player_data[6]}</td>
-                            <td style="text-align: center; padding: 8px 15px;">{player_data[7]}</td>
-                            <td style="text-align: center; padding: 8px 15px;">{player_data[8]}</td>
+                            <td style="text-align: left; padding: 8px 15px; font-weight: bold;">{player}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{stats['PTS']}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{stats['REB']}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{stats['AST']}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{stats['STL']}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{stats['BLK']}</td>
+                            <td style="text-align: center; padding: 8px 15px;">{stats['FG']}/{stats['FGA']} ({fg_pct})</td>
+                            <td style="text-align: center; padding: 8px 15px;">{stats['FG3']}/{stats['FG3A']} ({fg3_pct})</td>
+                            <td style="text-align: center; padding: 8px 15px;">{stats['TO']}</td>
                         </tr>
         """
     
@@ -1401,16 +1351,59 @@ def game_simulator(team1_players, team2_players, team1_name="Team 1", team2_name
             </div>
         </div>
         
+        <!-- Top Scorers -->
+        <div style="margin-bottom: 20px; background-color: rgba(30,30,40,0.9); padding: 15px; border-radius: 10px;">
+            <h3 style="color: #F7B801; margin-top: 0; border-bottom: 2px solid #F7B801; padding-bottom: 8px;">
+                Top Scorers
+            </h3>
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-around; gap: 15px; margin-top: 15px;">
+    """
+    
+    # Add top 3 scorers from each team
+    for i, (player, pts) in enumerate(team1_top[:3]):
+        player_stats = team1_game_stats[player]
+        html_content += f"""
+                <div style="background-color: rgba(23, 64, 139, 0.3); padding: 12px; border-radius: 8px; min-width: 200px; text-align: center;">
+                    <h4 style="margin-top: 0; color: white;">{player}</h4>
+                    <p style="font-size: 24px; font-weight: bold; margin: 5px 0;">{pts} pts</p>
+                    <p style="margin: 5px 0; font-size: 14px;">
+                        {player_stats['REB']} reb | {player_stats['AST']} ast | {player_stats['FG']}/{player_stats['FGA']} FG
+                    </p>
+                </div>
+        """
+    
+    for i, (player, pts) in enumerate(team2_top[:3]):
+        player_stats = team2_game_stats[player]
+        html_content += f"""
+                <div style="background-color: rgba(201, 8, 42, 0.3); padding: 12px; border-radius: 8px; min-width: 200px; text-align: center;">
+                    <h4 style="margin-top: 0; color: white;">{player}</h4>
+                    <p style="font-size: 24px; font-weight: bold; margin: 5px 0;">{pts} pts</p>
+                    <p style="margin: 5px 0; font-size: 14px;">
+                        {player_stats['REB']} reb | {player_stats['AST']} ast | {player_stats['FG']}/{player_stats['FGA']} FG
+                    </p>
+                </div>
+        """
+    
+    html_content += """
+            </div>
+        </div>
+        
         <!-- Game Winner Banner -->
-        <div style="text-align: center; background-color: {winner_color}; padding: 15px; border-radius: 10px; margin-top: 20px;">
+        <div style="text-align: center; background-color: """ + winner_color + """; padding: 15px; border-radius: 10px; margin-top: 20px;">
             <h2 style="color: white; margin: 0; font-size: 28px;">
-                {winner if winner != "Tie" else "It's a Tie!"} {" Wins!" if winner != "Tie" else ""}
+    """
+    
+    if winner == "Tie":
+        html_content += "It's a Tie!"
+    else:
+        html_content += f"{winner} Wins!"
+    
+    html_content += """
             </h2>
         </div>
     </div>
     """
     
-    # Return just the HTML content without a figure
     return play_by_play_text, html_content
 
 def normalize_stats(df, column):

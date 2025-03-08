@@ -31,6 +31,16 @@ def create_ai_features_interface():
                 )
                 analyze_button = gr.Button("Analyze Player", variant="primary")
                 
+                # Add some preset player buttons for easy selection
+                gr.Markdown("### Quick Player Select")
+                with gr.Row():
+                    preset_player1 = gr.Button("LeBron James")
+                    preset_player2 = gr.Button("Stephen Curry")
+                    
+                with gr.Row():
+                    preset_player3 = gr.Button("Giannis Antetokounmpo")
+                    preset_player4 = gr.Button("Nikola Jokić")
+                
                 ai_status = gr.Markdown(
                     "✅ AI Ready" if is_ai_available else 
                     "⚠️ AI Not Available - Please start Ollama with: `ollama run llama3.2`"
@@ -48,6 +58,12 @@ def create_ai_features_interface():
                 
                 draft_advice = gr.Markdown(label="Draft Advice")
                 comparable_players = gr.Markdown(label="Comparable Players")
+        
+        # Handle preset player buttons the simpler way
+        preset_player1.click(lambda: "LeBron James", inputs=[], outputs=[player_name_input])
+        preset_player2.click(lambda: "Stephen Curry", inputs=[], outputs=[player_name_input])
+        preset_player3.click(lambda: "Giannis Antetokounmpo", inputs=[], outputs=[player_name_input])
+        preset_player4.click(lambda: "Nikola Jokić", inputs=[], outputs=[player_name_input])
         
         # Handle analyze button click
         def analyze_player(player_name):
@@ -127,6 +143,14 @@ def create_ai_features_interface():
                     value="LeBron James, Giannis Antetokounmpo, Nikola Jokic" if is_ai_available else "",
                     lines=3
                 )
+                
+                # Add preset team buttons
+                gr.Markdown("### Team 1: Quick Presets")
+                with gr.Row():
+                    team1_preset1 = gr.Button("All Stars")
+                    team1_preset2 = gr.Button("Elite Guards")
+                    team1_preset3 = gr.Button("Defensive Team")
+                
             with gr.Column():
                 team2_name = gr.Textbox(label="Team 2 Name", value="Team Omega")
                 team2_players = gr.Textbox(
@@ -135,6 +159,33 @@ def create_ai_features_interface():
                     value="Joel Embiid, Luka Doncic, Jayson Tatum" if is_ai_available else "",
                     lines=3
                 )
+                
+                # Add preset team buttons
+                gr.Markdown("### Team 2: Quick Presets")
+                with gr.Row():
+                    team2_preset1 = gr.Button("Young Guns")
+                    team2_preset2 = gr.Button("Big Men")
+                    team2_preset3 = gr.Button("Offensive Team")
+        
+        # Preset team handlers
+        def get_preset_team(preset_name):
+            presets = {
+                "All Stars": "LeBron James, Kevin Durant, Stephen Curry, Giannis Antetokounmpo, Nikola Jokic",
+                "Young Guns": "Luka Doncic, Trae Young, Ja Morant, Zion Williamson, Anthony Edwards",
+                "Big Men": "Joel Embiid, Nikola Jokic, Anthony Davis, Karl-Anthony Towns, Bam Adebayo",
+                "Elite Guards": "Stephen Curry, Damian Lillard, Kyrie Irving, Devin Booker, Donovan Mitchell",
+                "Defensive Team": "Jrue Holiday, Marcus Smart, Kawhi Leonard, Draymond Green, Rudy Gobert",
+                "Offensive Team": "James Harden, Stephen Curry, Kevin Durant, Giannis Antetokounmpo, Joel Embiid"
+            }
+            return presets.get(preset_name, "")
+        
+        team1_preset1.click(lambda: get_preset_team("All Stars"), inputs=[], outputs=[team1_players])
+        team1_preset2.click(lambda: get_preset_team("Elite Guards"), inputs=[], outputs=[team1_players])
+        team1_preset3.click(lambda: get_preset_team("Defensive Team"), inputs=[], outputs=[team1_players])
+        
+        team2_preset1.click(lambda: get_preset_team("Young Guns"), inputs=[], outputs=[team2_players])
+        team2_preset2.click(lambda: get_preset_team("Big Men"), inputs=[], outputs=[team2_players])
+        team2_preset3.click(lambda: get_preset_team("Offensive Team"), inputs=[], outputs=[team2_players])
         
         analyze_matchup_button = gr.Button("Analyze Matchup", variant="primary")
         matchup_analysis = gr.Markdown(label="Matchup Analysis")
@@ -181,6 +232,34 @@ def create_ai_features_interface():
             )
             send_button = gr.Button("Send", variant="primary")
         
+        # Add quick prompt buttons
+        gr.Markdown("### Quick Questions")
+        with gr.Row():
+            prompt_btn1 = gr.Button("Draft strategy for 9-cat league?")
+            prompt_btn2 = gr.Button("Best punt strategies this season?")
+            prompt_btn3 = gr.Button("How to evaluate trades?")
+        
+        def set_prompt(prompt):
+            return prompt
+            
+        prompt_btn1.click(
+            lambda: "What's the best draft strategy for a 9-category fantasy league?",
+            inputs=[],
+            outputs=[question_input]
+        )
+        
+        prompt_btn2.click(
+            lambda: "What are some effective punt strategies for this season?",
+            inputs=[],
+            outputs=[question_input]
+        )
+        
+        prompt_btn3.click(
+            lambda: "How should I evaluate trades in fantasy basketball?",
+            inputs=[],
+            outputs=[question_input]
+        )
+        
         def chat_with_assistant(message, history):
             if not is_ai_available:
                 history.append((message, "⚠️ AI Not Available - Please start Ollama with: `ollama run llama3.2`"))
@@ -200,4 +279,4 @@ def create_ai_features_interface():
             outputs=[chat_history, question_input]
         )
     
-    return is_ai_available 
+    return is_ai_available

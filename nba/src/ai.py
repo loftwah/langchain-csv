@@ -16,7 +16,11 @@ from langchain.prompts import PromptTemplate
 from langchain.output_parsers import PydanticOutputParser
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
+# Updated embeddings import with fallback
+try:
+    from langchain_huggingface import HuggingFaceEmbeddings
+except ImportError:
+    from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from pydantic import BaseModel, Field
 
@@ -124,11 +128,21 @@ def setup_nba_knowledge_base():
             # Split documents
             splits = text_splitter.split_documents(documents)
             
-            # Create embeddings
-            embeddings = HuggingFaceEmbeddings(
-                model_name="all-MiniLM-L6-v2",
-                cache_folder="./nba_api_cache/embeddings"
-            )
+            # Create embeddings - using properly imported HuggingFaceEmbeddings
+            try:
+                # Try with the new recommended import first
+                embeddings = HuggingFaceEmbeddings(
+                    model_name="all-MiniLM-L6-v2",
+                    cache_folder="./nba_api_cache/embeddings"
+                )
+            except Exception as e:
+                print(f"Warning: Error with new HuggingFaceEmbeddings: {e}")
+                # Fallback to the community version if there's an issue
+                from langchain_community.embeddings import HuggingFaceEmbeddings as CommunityHuggingFaceEmbeddings
+                embeddings = CommunityHuggingFaceEmbeddings(
+                    model_name="all-MiniLM-L6-v2",
+                    cache_folder="./nba_api_cache/embeddings"
+                )
             
             # Create vector store
             vector_store = Chroma.from_documents(
@@ -454,4 +468,4 @@ class NBAFantasyAssistant:
         
         except Exception as e:
             print(f"Error answering question: {e}")
-            return f"Error: {str(e)}" 
+            return f"Error: {str(e)}"

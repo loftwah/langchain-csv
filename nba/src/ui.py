@@ -32,7 +32,7 @@ def create_draft_helper_ui():
             output_area = gr.Dataframe(label="Draft Rankings and Analysis")
             
     analyze_btn.click(
-        fn=lambda teams, scoring, pos: draft_helper.analyze_draft_value(int(teams), scoring, int(pos)),
+        fn=lambda teams, scoring, pos: draft_helper(int(teams), scoring, int(pos)),
         inputs=[num_teams, scoring_type, draft_pos],
         outputs=output_area
     )
@@ -57,11 +57,12 @@ def create_matchup_analyzer_ui():
     
     analyze_matchup_btn = gr.Button("Analyze Matchup", variant="primary")
     matchup_output = gr.Plot(label="Matchup Analysis")
+    matchup_text = gr.Markdown(label="Matchup Results")
     
     analyze_matchup_btn.click(
-        fn=lambda t1, t2: matchup_analyzer.compare_teams(t1.split(","), t2.split(",")),
+        fn=matchup_analyzer,
         inputs=[team1_players, team2_players],
-        outputs=matchup_output
+        outputs=[matchup_text, matchup_output]
     )
     
     return matchup_output
@@ -83,40 +84,98 @@ def create_consistency_tracker_ui():
         
         with gr.Column():
             consistency_output = gr.Plot(label="Consistency Analysis")
+            consistency_text = gr.Markdown(label="Consistency Insights")
     
     analyze_consistency_btn.click(
-        fn=lambda player, period: consistency_tracker.analyze_consistency(player, period),
+        fn=consistency_tracker,
         inputs=[player_name, time_period],
-        outputs=consistency_output
+        outputs=[consistency_text, consistency_output]
     )
     
     return consistency_output
 
+def load_preset_team(preset_name):
+    """Load a preset team configuration for demo purposes"""
+    presets = {
+        "all_stars": "LeBron James, Kevin Durant, Stephen Curry, Giannis Antetokounmpo, Nikola Jokic",
+        "young_guns": "Luka Doncic, Trae Young, Ja Morant, Zion Williamson, Anthony Edwards",
+        "big_men": "Joel Embiid, Nikola Jokic, Anthony Davis, Karl-Anthony Towns, Bam Adebayo",
+        "guards": "Stephen Curry, Damian Lillard, Kyrie Irving, Devin Booker, Donovan Mitchell",
+        "legends": "Michael Jordan, Kobe Bryant, LeBron James, Magic Johnson, Larry Bird",
+        "offense": "James Harden, Stephen Curry, Kevin Durant, Giannis Antetokounmpo, Joel Embiid",
+        "defense": "Jrue Holiday, Marcus Smart, Kawhi Leonard, Draymond Green, Rudy Gobert"
+    }
+    return presets.get(preset_name, "")
+
 def create_game_simulator_ui():
     """Create the UI for the Game Simulator tool"""
     with gr.Row():
-        with gr.Column():
-            team1 = gr.Textbox(
-                placeholder="Enter team name (e.g., Lakers)",
-                label="Team 1"
+        with gr.Column(scale=1):
+            gr.Markdown("### Team Setup")
+            team1_name = gr.Textbox(label="Team 1 Name", value="All Stars")
+            team1_players = gr.Textbox(
+                placeholder="Enter players for Team 1, separated by commas",
+                label="Team 1 Players",
+                lines=3,
+                value="LeBron James, Kevin Durant, Stephen Curry"
             )
-            team2 = gr.Textbox(
-                placeholder="Enter team name (e.g., Celtics)",
-                label="Team 2"
+            
+            team2_name = gr.Textbox(label="Team 2 Name", value="Young Guns")
+            team2_players = gr.Textbox(
+                placeholder="Enter players for Team 2, separated by commas",
+                label="Team 2 Players",
+                lines=3,
+                value="Luka Doncic, Ja Morant, Zion Williamson"
             )
-            num_simulations = gr.Slider(minimum=10, maximum=1000, value=100, step=10, label="Number of Simulations")
-            simulate_btn = gr.Button("Run Simulation", variant="primary")
+            
+            gr.Markdown("### Game Settings")
+            quarters = gr.Slider(minimum=1, maximum=4, value=4, step=1, label="Number of Quarters")
+            quarter_length = gr.Slider(minimum=6, maximum=12, value=12, step=1, label="Quarter Length (minutes)")
+            
+            gr.Markdown("### Preset Teams")
+            with gr.Row():
+                preset_team1_btn = gr.Button("Load Preset Team 1")
+                preset_team1 = gr.Dropdown(
+                    choices=["all_stars", "young_guns", "big_men", "guards", "legends", "offense", "defense"],
+                    label="Team 1 Preset",
+                    value="all_stars"
+                )
+            
+            with gr.Row():
+                preset_team2_btn = gr.Button("Load Preset Team 2")
+                preset_team2 = gr.Dropdown(
+                    choices=["all_stars", "young_guns", "big_men", "guards", "legends", "offense", "defense"],
+                    label="Team 2 Preset",
+                    value="young_guns"
+                )
+            
+            simulate_btn = gr.Button("Run Game Simulation", variant="primary")
         
-        with gr.Column():
-            simulation_output = gr.Plot(label="Simulation Results")
+        with gr.Column(scale=2):
+            sim_html = gr.HTML(label="Game Visualization")
+            sim_output = gr.Markdown(label="Play-by-Play")
     
-    simulate_btn.click(
-        fn=lambda t1, t2, sims: game_simulator.simulate_game(t1, t2, int(sims)),
-        inputs=[team1, team2, num_simulations],
-        outputs=simulation_output
+    # Load preset team handlers
+    preset_team1_btn.click(
+        fn=load_preset_team,
+        inputs=[preset_team1],
+        outputs=[team1_players]
     )
     
-    return simulation_output
+    preset_team2_btn.click(
+        fn=load_preset_team,
+        inputs=[preset_team2],
+        outputs=[team2_players]
+    )
+    
+    # Run simulation handler
+    simulate_btn.click(
+        fn=game_simulator,
+        inputs=[team1_players, team2_players, team1_name, team2_name, quarters, quarter_length],
+        outputs=[sim_output, sim_html]
+    )
+    
+    return sim_output, sim_html
 
 def create_interface():
     """Create and configure the Gradio interface for the application"""
@@ -164,4 +223,4 @@ def create_interface():
         </div>
         """)
     
-    return demo 
+    return demo
