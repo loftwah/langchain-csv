@@ -29,7 +29,7 @@ def check_ollama_availability():
         from langchain_ollama import OllamaLLM
         
         # Try to initialize Ollama with a simple request
-        ollama = OllamaLLM(model="llama3")
+        ollama = OllamaLLM(model="llama3.2")
         response = ollama.invoke("Say hello")
         
         print_with_animation("✅ Successfully connected to Ollama")
@@ -44,16 +44,16 @@ def check_ollama_availability():
             try:
                 # Try to start Ollama in the background
                 subprocess.Popen(
-                    ["ollama", "run", "llama3"],
+                    ["ollama", "run", "llama3.2"],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE
                 )
                 print_with_animation("Started Ollama in background. AI features might become available shortly.")
             except Exception as start_error:
                 print_with_animation(f"❌ Failed to start Ollama: {start_error}")
-                print_with_animation("To use AI features, please start Ollama manually: ollama run llama3")
+                print_with_animation("To use AI features, please start Ollama manually: ollama run llama3.2")
         else:
-            print_with_animation("ℹ️ To use AI features, please start Ollama manually: ollama run llama3")
+            print_with_animation("ℹ️ To use AI features, please start Ollama manually: ollama run llama3.2")
             print_with_animation("   Or set NBA_AUTO_START_OLLAMA=1 to attempt automatic startup")
         
         return False

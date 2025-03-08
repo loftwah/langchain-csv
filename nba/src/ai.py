@@ -30,7 +30,7 @@ def get_llm():
     """Initialize and return the Ollama LLM instance with Llama 3.2"""
     try:
         # Set the model - default to llama3 but allow override
-        model_name = os.environ.get("NBA_LLM_MODEL", "llama3")
+        model_name = os.environ.get("NBA_LLM_MODEL", "llama3.2")
         
         # Initialize the LLM
         llm = OllamaLLM(model=model_name)
@@ -46,7 +46,7 @@ def get_llm():
     except Exception as e:
         print(f"❌ Error connecting to Ollama: {e}")
         print("⚠️ Some AI features will be unavailable. Please make sure Ollama is running.")
-        print("   Run: ollama run llama3")
+        print("   Run: ollama run llama3.2")
         return None
 
 # Player analysis models

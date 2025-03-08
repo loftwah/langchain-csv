@@ -33,7 +33,7 @@ def create_ai_features_interface():
                 
                 ai_status = gr.Markdown(
                     "✅ AI Ready" if is_ai_available else 
-                    "⚠️ AI Not Available - Please start Ollama with: `ollama run llama3`"
+                    "⚠️ AI Not Available - Please start Ollama with: `ollama run llama3.2`"
                 )
                 
             with gr.Column(scale=2):
@@ -62,7 +62,7 @@ def create_ai_features_interface():
             
             if not is_ai_available:
                 return (
-                    "⚠️ AI Not Available - Please start Ollama with: `ollama run llama3`",
+                    "⚠️ AI Not Available - Please start Ollama with: `ollama run llama3.2`",
                     "AI Not Available",
                     "AI Not Available",
                     "AI Not Available",
@@ -141,7 +141,7 @@ def create_ai_features_interface():
         
         def analyze_teams_matchup(team1_name, team1_input, team2_name, team2_input):
             if not is_ai_available:
-                return "⚠️ AI Not Available - Please start Ollama with: `ollama run llama3`"
+                return "⚠️ AI Not Available - Please start Ollama with: `ollama run llama3.2`"
             
             # Parse team players
             team1_list = [p.strip() for p in team1_input.split(",") if p.strip()]
@@ -183,7 +183,7 @@ def create_ai_features_interface():
         
         def chat_with_assistant(message, history):
             if not is_ai_available:
-                history.append((message, "⚠️ AI Not Available - Please start Ollama with: `ollama run llama3`"))
+                history.append((message, "⚠️ AI Not Available - Please start Ollama with: `ollama run llama3.2`"))
                 return history, ""
             
             # Get answer from assistant
