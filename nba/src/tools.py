@@ -122,7 +122,7 @@ def draft_helper(num_teams=12, scoring_type='Standard Points', draft_pos=6):
             transform=ax.transAxes, fontsize=12, color=NBA_COLORS['highlight'])
     
     # Add Loftwah branding to the plot
-    fig.text(0.95, 0.02, "Created by Loftwah", fontsize=10, 
+    fig.text(0.95, 0.02, "Made with ❤️ by Loftwah", fontsize=10, 
              ha='right', va='bottom', color=NBA_COLORS['highlight'],
              url="https://linkarooie.com/loftwah")
     
@@ -288,7 +288,7 @@ def matchup_analyzer(team1_players, team2_players, scoring_system='standard'):
         axs[i].set_facecolor(NBA_COLORS['background'])
     
     # Add Loftwah branding to the plot
-    fig.text(0.95, 0.02, "Created by Loftwah", fontsize=10, 
+    fig.text(0.95, 0.02, "Made with ❤️ by Loftwah", fontsize=10, 
              ha='right', va='bottom', color=NBA_COLORS['highlight'],
              url="https://linkarooie.com/loftwah")
     

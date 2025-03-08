@@ -318,6 +318,7 @@ def create_interface():
     description = """
     A suite of interactive tools for fantasy basketball managers. 
     Analyze draft value, compare matchups, track player consistency, and simulate games.
+    Made with ❤️ by <a href="https://linkarooie.com/loftwah" target="_blank">Loftwah</a>
     """
     
     # Start the interface creation
@@ -353,6 +354,14 @@ def create_interface():
         <div class="footer">
         <p>Fantasy Basketball Tools | Using NBA API data | Created with Gradio</p>
         <p>Data updates daily during the NBA season</p>
+        <p>Made with ❤️ by <a href="https://linkarooie.com/loftwah" target="_blank">Loftwah</a></p>
+        </div>
+        """)
+        
+        # Add floating attribution
+        gr.Markdown("""
+        <div class="app-footer">
+        <a href="https://linkarooie.com/loftwah" target="_blank"></a>
         </div>
         """)
     

@@ -236,7 +236,7 @@ class ConsistencyTracker:
         ax2.spines['left'].set_visible(False)
         
         # Add branding to the plot
-        fig.text(0.95, 0.02, "Created by Loftwah", fontsize=10, 
+        fig.text(0.95, 0.02, "Made with ❤️ by Loftwah", fontsize=10, 
                  ha='right', va='bottom', color=NBA_COLORS['highlight'],
                  url="https://linkarooie.com/loftwah")
         

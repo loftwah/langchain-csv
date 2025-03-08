@@ -304,4 +304,27 @@ input, select, textarea {
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: 8px;
 }
+
+/* Floating attribution */
+.app-footer {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    background-color: rgba(30, 30, 30, 0.8);
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    color: #F7B801;
+    z-index: 1000;
+}
+.app-footer::after {
+    content: "Made with ❤️ by Loftwah";
+}
+.app-footer a {
+    color: #F7B801 !important;
+    text-decoration: none !important;
+}
+.app-footer a:hover {
+    text-decoration: underline !important;
+}
 """ 
