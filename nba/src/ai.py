@@ -237,8 +237,33 @@ class NBAFantasyAssistant:
             4. Advice for drafting or trading for this player
             5. 3-5 comparable players for comparison
             
-            Format your response as a JSON object matching this structure:
+            YOUR RESPONSE MUST BE ONLY A VALID JSON OBJECT. Do not include any text before or after the JSON.
+            Do not include the schema definition in your response, only provide the actual JSON data.
+            Do not include markdown formatting, just the raw JSON.
+            
             {format_instructions}
+            
+            Example of what your response should look like:
+            {{
+              "player_name": "LeBron James",
+              "summary": "LeBron remains an elite fantasy option...",
+              "strengths": [
+                {{
+                  "category": "Scoring",
+                  "explanation": "Still averaging over 25 points per game",
+                  "fantasy_impact": "Provides consistent scoring production"
+                }}
+              ],
+              "weaknesses": [
+                {{
+                  "category": "Free throws",
+                  "explanation": "Below average free throw percentage",
+                  "fantasy_impact": "Hurts your team's FT% category"
+                }}
+              ],
+              "draft_advice": "Target in early rounds...",
+              "comparable_players": ["Kevin Durant", "Kawhi Leonard", "Jimmy Butler"]
+            }}
             """
             
             # Set up the output parser
@@ -251,8 +276,14 @@ class NBAFantasyAssistant:
                 partial_variables={"format_instructions": parser.get_format_instructions()}
             )
             
-            # Create and run the chain
-            chain = LLMChain(llm=self.llm, prompt=prompt)
+            # Create and run the chain - updated to use new RunnableSequence pattern
+            # Instead of LLMChain which is deprecated
+            from langchain.schema.runnable import RunnablePassthrough
+            
+            # Build a RunnableSequence instead of using LLMChain
+            chain = prompt | self.llm
+            
+            # Invoke the chain with the same inputs
             response = chain.invoke({
                 "player_name": player_name,
                 "stats_text": stats_text,
@@ -261,12 +292,49 @@ class NBAFantasyAssistant:
             
             # Parse the response
             try:
-                result = parser.parse(response['text'])
+                # First try to parse as is
+                result = parser.parse(response)
                 return result.dict()
             except Exception as e:
-                # Fallback to returning raw text if parsing fails
                 print(f"Error parsing LLM response: {e}")
-                return {"summary": response['text'], "player_name": player_name}
+                
+                # Second attempt: Try to fix common JSON formatting issues
+                try:
+                    # Sometimes the LLM includes the schema definition in the response
+                    # Extract just the JSON object if possible
+                    import re
+                    json_match = re.search(r'({[\s\S]*})', response)
+                    if json_match:
+                        clean_json = json_match.group(1)
+                        # Parse the JSON manually
+                        json_data = json.loads(clean_json)
+                        
+                        # Validate required fields are present
+                        required_fields = ["player_name", "summary", "strengths", "weaknesses", 
+                                          "draft_advice", "comparable_players"]
+                        
+                        # Add any missing fields with default values
+                        for field in required_fields:
+                            if field not in json_data:
+                                if field in ["strengths", "weaknesses", "comparable_players"]:
+                                    json_data[field] = []
+                                else:
+                                    json_data[field] = player_name if field == "player_name" else "Information not available"
+                        
+                        return json_data
+                    else:
+                        raise ValueError("Could not extract JSON from response")
+                except Exception as json_error:
+                    print(f"Failed to parse JSON manually: {json_error}")
+                    # Last resort fallback - return basic info
+                    return {
+                        "player_name": player_name,
+                        "summary": f"Analysis of {player_name} could not be generated. Please try again later.",
+                        "strengths": [],
+                        "weaknesses": [],
+                        "draft_advice": "No advice available due to processing error.",
+                        "comparable_players": []
+                    }
         
         except Exception as e:
             print(f"Error in player analysis: {e}")
@@ -405,7 +473,9 @@ class NBAFantasyAssistant:
             )
             
             # Create and run the chain
-            chain = LLMChain(llm=self.llm, prompt=prompt)
+            chain = prompt | self.llm
+            
+            # Invoke the chain with the same inputs
             response = chain.invoke({
                 "team1_name": team1_name,
                 "team1_players": ", ".join(team1_players),
@@ -415,7 +485,14 @@ class NBAFantasyAssistant:
                 "team2_stats": team2_stats_formatted
             })
             
-            return response['text']
+            # Process LLM response
+            try:
+                # Try to parse as JSON
+                result = json.loads(response)
+                return result
+            except Exception as e:
+                print(f"Error parsing matchup analysis response: {e}")
+                return {"error": f"Failed to analyze matchup: {str(e)}"}
         
         except Exception as e:
             print(f"Error in matchup analysis: {e}")
@@ -458,13 +535,20 @@ class NBAFantasyAssistant:
             )
             
             # Create and run the chain
-            chain = LLMChain(llm=self.llm, prompt=prompt)
+            chain = prompt | self.llm
+            
+            # Invoke the chain with the same inputs
             response = chain.invoke({
                 "context": context,
                 "question": question
             })
             
-            return response['text']
+            # Parse response
+            try:
+                answer = response
+                return {"answer": answer}
+            except Exception as e:
+                return {"error": f"Failed to process response: {str(e)}"}
         
         except Exception as e:
             print(f"Error answering question: {e}")
