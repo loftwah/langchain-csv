@@ -100,6 +100,46 @@ NOTABLE_PLAYERS = [
     "Giannis Antetokounmpo", "Nikola Jokic", "Luka Doncic", "Joel Embiid"
 ]
 
+# Preset configurations for various tools
+PRESETS = {
+    # Player presets for quick selection
+    "players": {
+        "superstars": ["LeBron James", "Kevin Durant", "Stephen Curry", "Giannis Antetokounmpo", "Nikola Jokić"],
+        "guards": ["Stephen Curry", "Damian Lillard", "Kyrie Irving", "Devin Booker", "Donovan Mitchell"],
+        "forwards": ["LeBron James", "Kevin Durant", "Kawhi Leonard", "Jayson Tatum", "Jimmy Butler"],
+        "centers": ["Nikola Jokić", "Joel Embiid", "Anthony Davis", "Karl-Anthony Towns", "Bam Adebayo"]
+    },
+    
+    # Team presets for simulations and matchups
+    "teams": {
+        "all_stars": "LeBron James, Kevin Durant, Stephen Curry, Giannis Antetokounmpo, Nikola Jokić",
+        "young_guns": "Luka Dončić, Trae Young, Ja Morant, Zion Williamson, Anthony Edwards",
+        "big_men": "Joel Embiid, Nikola Jokić, Anthony Davis, Karl-Anthony Towns, Bam Adebayo",
+        "guards": "Stephen Curry, Damian Lillard, Kyrie Irving, Devin Booker, Donovan Mitchell",
+        "legends": "Michael Jordan, Kobe Bryant, LeBron James, Magic Johnson, Larry Bird",
+        "offense": "James Harden, Stephen Curry, Kevin Durant, Giannis Antetokounmpo, Joel Embiid",
+        "defense": "Jrue Holiday, Marcus Smart, Kawhi Leonard, Draymond Green, Rudy Gobert",
+        "forwards": "LeBron James, Kevin Durant, Kawhi Leonard, Jayson Tatum, Jimmy Butler"
+    },
+    
+    # Draft settings presets
+    "draft": {
+        "standard_12_team": {"teams": 12, "scoring": "Standard Points", "position": 6},
+        "standard_10_team": {"teams": 10, "scoring": "Standard Points", "position": 5},
+        "categories_12_team": {"teams": 12, "scoring": "Standard Categories", "position": 6},
+        "categories_10_team": {"teams": 10, "scoring": "Standard Categories", "position": 5}
+    },
+    
+    # Consistency tracker presets - popular players to track
+    "consistency": [
+        "LeBron James",
+        "Stephen Curry",
+        "Nikola Jokić",
+        "Giannis Antetokounmpo",
+        "Luka Dončić"
+    ]
+}
+
 # Custom CSS for Gradio interface
 CUSTOM_CSS = """
 body, .gradio-container {
@@ -219,31 +259,49 @@ input, select, textarea {
 }
 
 .preset-button {
-    margin: 10px 5px !important;
-    background-color: #1e1e1e !important;
-    border: 2px solid #444 !important;
-    color: white !important;
-    border-radius: 8px !important;
-    padding: 15px !important;
-    font-weight: bold !important;
-    transition: all 0.3s ease !important;
-    font-size: 16px !important;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    min-width: 200px !important;
-    text-align: center !important;
-    cursor: pointer !important;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 6px 12px;
+    margin: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #333;
 }
 
 .preset-button:hover {
-    background-color: #17408B !important;
-    border-color: #F7B801 !important;
-    transform: translateY(-3px);
-    box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-    color: #F7B801 !important;
+    background-color: #e0e0e0;
+    border-color: #ccc;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .preset-button:active {
-    transform: translateY(-1px);
-    box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+    background-color: #d0d0d0;
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* Preset section styling */
+.preset-section {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #eee;
+}
+
+.preset-section h4 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #555;
+}
+
+.preset-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
 }
 """ 

@@ -217,69 +217,73 @@ def create_ai_features_interface():
             outputs=[matchup_analysis]
         )
     
-    # Fantasy Assistant Tab (Chat)
+    # Fantasy Assistant Tab
     with gr.Tab("Fantasy Assistant"):
-        chat_history = gr.Chatbot(
-            label="Chat with Fantasy Assistant",
-            height=500,
-            type="messages"
-        )
+        gr.Markdown("### Fantasy Basketball Assistant")
+        gr.Markdown("Ask any fantasy basketball question or use one of the preset questions below.")
         
         with gr.Row():
-            question_input = gr.Textbox(
-                label="Ask a question about fantasy basketball",
-                placeholder="Which category should I prioritize in my draft?",
-                lines=2
-            )
-            send_button = gr.Button("Send", variant="primary")
+            with gr.Column(scale=2):
+                user_question = gr.Textbox(
+                    label="Your Question",
+                    placeholder="Ask for fantasy advice, player comparisons, strategy suggestions, etc.",
+                    lines=3
+                )
+                
+                # Adding preset questions that users can click on
+                gr.Markdown("### Quick Questions")
+                with gr.Column(elem_classes=["preset-section"]):
+                    with gr.Column():
+                        with gr.Row():
+                            strategy_q1 = gr.Button("Should I prioritize guards or big men in the draft?", elem_classes=["preset-button"])
+                            strategy_q2 = gr.Button("What's the optimal draft strategy for a 12-team league?", elem_classes=["preset-button"])
+                        
+                        with gr.Row():
+                            player_q1 = gr.Button("Who are the most consistent fantasy performers?", elem_classes=["preset-button"])
+                            player_q2 = gr.Button("Which rookies should I target in my draft?", elem_classes=["preset-button"])
+                        
+                        with gr.Row():
+                            trade_q1 = gr.Button("Is trading LeBron for Giannis a good move?", elem_classes=["preset-button"])
+                            trade_q2 = gr.Button("When is the best time to trade for injured stars?", elem_classes=["preset-button"])
+                        
+                        with gr.Row():
+                            league_q1 = gr.Button("What scoring system is most balanced for fantasy?", elem_classes=["preset-button"])
+                            league_q2 = gr.Button("How do I counter a team that's dominating in blocks?", elem_classes=["preset-button"])
+                
+                ask_btn = gr.Button("Ask Assistant", variant="primary")
+                
+            with gr.Column(scale=3):
+                assistant_response = gr.Markdown(label="Assistant Response")
         
-        # Add quick prompt buttons
-        gr.Markdown("### Quick Questions")
-        with gr.Row():
-            prompt_btn1 = gr.Button("Draft strategy for 9-cat league?")
-            prompt_btn2 = gr.Button("Best punt strategies this season?")
-            prompt_btn3 = gr.Button("How to evaluate trades?")
+        # Set up preset question button handlers
+        strategy_q1.click(lambda: "Should I prioritize guards or big men in the draft?", inputs=[], outputs=[user_question])
+        strategy_q2.click(lambda: "What's the optimal draft strategy for a 12-team league?", inputs=[], outputs=[user_question])
+        player_q1.click(lambda: "Who are the most consistent fantasy performers?", inputs=[], outputs=[user_question])
+        player_q2.click(lambda: "Which rookies should I target in my draft?", inputs=[], outputs=[user_question])
+        trade_q1.click(lambda: "Is trading LeBron for Giannis a good move?", inputs=[], outputs=[user_question])
+        trade_q2.click(lambda: "When is the best time to trade for injured stars?", inputs=[], outputs=[user_question])
+        league_q1.click(lambda: "What scoring system is most balanced for fantasy?", inputs=[], outputs=[user_question])
+        league_q2.click(lambda: "How do I counter a team that's dominating in blocks?", inputs=[], outputs=[user_question])
         
-        def set_prompt(prompt):
-            return prompt
-            
-        prompt_btn1.click(
-            lambda: "What's the best draft strategy for a 9-category fantasy league?",
-            inputs=[],
-            outputs=[question_input]
-        )
-        
-        prompt_btn2.click(
-            lambda: "What are some effective punt strategies for this season?",
-            inputs=[],
-            outputs=[question_input]
-        )
-        
-        prompt_btn3.click(
-            lambda: "How should I evaluate trades in fantasy basketball?",
-            inputs=[],
-            outputs=[question_input]
-        )
-        
-        def chat_with_assistant(message, history):
+        # Handle ask button click
+        def ask_fantasy_assistant(question):
+            if not question or question.strip() == "":
+                return "Please enter a question."
+                
             if not is_ai_available:
-                history.append({"role": "user", "content": message})
-                history.append({"role": "assistant", "content": "⚠️ AI Not Available - Please start Ollama with: `ollama run llama3.2`"})
-                return history, ""
-            
-            # Get answer from assistant
-            answer = assistant.answer_fantasy_question(message)
-            
-            # Update history with the new messages format
-            history.append({"role": "user", "content": message})
-            history.append({"role": "assistant", "content": answer})
-            
-            return history, ""
-        
-        send_button.click(
-            chat_with_assistant,
-            inputs=[question_input, chat_history],
-            outputs=[chat_history, question_input]
+                return "⚠️ AI Not Available - Please start Ollama with: `ollama run llama3.2`"
+                
+            # Call the assistant to answer the question
+            try:
+                response = assistant.answer_fantasy_question(question)
+                return response
+            except Exception as e:
+                return f"Error: {str(e)}"
+                
+        ask_btn.click(
+            ask_fantasy_assistant,
+            inputs=[user_question],
+            outputs=[assistant_response]
         )
     
     return is_ai_available
