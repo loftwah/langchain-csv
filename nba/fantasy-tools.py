@@ -33,7 +33,7 @@ def check_ollama_availability():
         
         # Try to initialize Ollama with a simple request
         ollama = OllamaLLM(model="llama3.2")
-        response = ollama.invoke("Say hello")
+        response = ollama.invoke("Say gday!")
         
         print_with_animation("✅ Successfully connected to Ollama")
         print_with_animation(f"   LLM response: {response[:50]}...")
