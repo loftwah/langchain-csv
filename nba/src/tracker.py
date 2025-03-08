@@ -42,23 +42,44 @@ class ConsistencyTracker:
         Returns:
             Tuple containing: (summary text, visualization figure)
         """
+        print(f"Starting analysis for player: '{self.player_name}' using {self.num_games} games")
+        
         # Get player ID
         self.player_id = get_player_id(self.player_name)
         
         if not self.player_id:
             return self._handle_missing_player_id(), None
             
+        print(f"Found player ID: {self.player_id} for '{self.player_name}'")
+            
         # Get recent games
-        self.recent_games = get_player_games(self.player_id, last_n_games=self.num_games)
+        try:
+            self.recent_games = get_player_games(self.player_id, last_n_games=self.num_games)
+        except Exception as e:
+            error_msg = f"Error fetching game data: {str(e)}"
+            print(error_msg)
+            return error_msg, None
         
-        if self.recent_games.empty:
+        if self.recent_games is None or self.recent_games.empty:
             return f"No recent game data found for {self.player_name}", None
+        
+        print(f"Retrieved {len(self.recent_games)} games for analysis")
             
         # Calculate consistency metrics
-        self.consistency_metrics = calculate_consistency(self.recent_games, self.scoring_system)
+        try:
+            self.consistency_metrics = calculate_consistency(self.recent_games, self.scoring_system)
+        except Exception as e:
+            error_msg = f"Error calculating consistency metrics: {str(e)}"
+            print(error_msg)
+            return error_msg, None
         
         # Create visualization
-        fig = self._create_visualization()
+        try:
+            fig = self._create_visualization()
+        except Exception as e:
+            error_msg = f"Error creating visualization: {str(e)}"
+            print(error_msg)
+            return f"Analysis completed, but visualization failed: {error_msg}", None
         
         # Generate summary
         summary = self._generate_summary()
@@ -77,8 +98,23 @@ class ConsistencyTracker:
         all_players = get_players()
         name_column = 'DISPLAY_FIRST_LAST' if 'DISPLAY_FIRST_LAST' in all_players.columns else 'full_name'
         if name_column in all_players.columns:
+            # Try to find similar names to help with debugging
             sample_players = all_players[name_column].head(5).tolist()
             print(f"DEBUG: Sample of available players: {sample_players}")
+            
+            # Try to find close matches if it's a known player with special characters
+            known_players = {
+                "jokic": "Nikola Jokić",
+                "doncic": "Luka Dončić",
+                "jokić": "Nikola Jokić",
+                "dončić": "Luka Dončić"
+            }
+            
+            normalized_input = self.player_name.lower()
+            for key, suggestion in known_players.items():
+                if key in normalized_input:
+                    return f"No player found matching '{self.player_name}'. Did you mean '{suggestion}'? Please try with the suggested name."
+        
         return f"No player found matching '{self.player_name}'. Please check the spelling and try again."
         
     def _create_visualization(self) -> plt.Figure:

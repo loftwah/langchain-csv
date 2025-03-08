@@ -333,8 +333,24 @@ def matchup_analyzer(team1_players, team2_players, scoring_system='standard'):
     
     return summary, fig
 
-def consistency_tracker(player_name, num_games=10, scoring_system='standard'):
+def consistency_tracker(player_name, time_period='Last 10 Games', scoring_system='standard'):
     """Analyze a player's consistency in fantasy performance"""
+    # Convert time period string to number of games
+    if isinstance(time_period, str):
+        if time_period == "Last 10 Games":
+            num_games = 10
+        elif time_period == "Last 30 Days":
+            num_games = 30
+        elif time_period == "Season":
+            num_games = 82
+        else:  # Default or "Custom Range"
+            num_games = 10
+    else:
+        num_games = int(time_period) if isinstance(time_period, (int, float)) else 10
+    
+    # For debugging, print the player we're searching for
+    print(f"Searching for player: '{player_name}' with {num_games} games")
+    
     # Use the refactored consistency tracker
     return refactored_consistency_tracker(
         player_name=player_name, 

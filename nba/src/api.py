@@ -98,15 +98,75 @@ def get_player_id(player_name):
         print("ERROR: Required columns not found in player data")
         return None
     
-    # First try exact match
-    exact_match = all_players[all_players[name_column].str.lower() == player_name.lower()]
+    # Normalize input player name - replace common special characters
+    normalized_player_name = player_name.lower()
+    special_char_map = {
+        'ć': 'c',
+        'č': 'c',
+        'ç': 'c',
+        'ñ': 'n',
+        'ü': 'u',
+        'ö': 'o',
+        'ä': 'a',
+        'é': 'e',
+        'è': 'e',
+        'ê': 'e',
+        'ë': 'e',
+        'í': 'i',
+        'ì': 'i',
+        'î': 'i',
+        'ï': 'i',
+        'ó': 'o',
+        'ò': 'o',
+        'ô': 'o',
+        'ú': 'u',
+        'ù': 'u',
+        'û': 'u',
+        '-': ' ',
+        '\'': '',
+        '.': ''
+    }
+    
+    for char, replacement in special_char_map.items():
+        normalized_player_name = normalized_player_name.replace(char, replacement)
+    
+    # Create normalized player names for comparison
+    all_players['normalized_name'] = all_players[name_column].str.lower()
+    for char, replacement in special_char_map.items():
+        all_players['normalized_name'] = all_players['normalized_name'].str.replace(char, replacement, regex=False)
+    
+    # First try exact match with normalized names
+    exact_match = all_players[all_players['normalized_name'] == normalized_player_name]
     if not exact_match.empty:
         return str(exact_match.iloc[0][id_column])
     
-    # Try contains match (case insensitive)
-    contains_matches = all_players[all_players[name_column].str.lower().str.contains(player_name.lower())]
-    if not contains_matches.empty:
-        return str(contains_matches.iloc[0][id_column])
+    # Try contains match (case insensitive) with normalized names
+    # Try to match on each word in the input name for better partial matching
+    name_parts = normalized_player_name.split()
+    
+    if len(name_parts) > 1:
+        # If we have multiple parts (first name, last name), we can try matching on last name first
+        last_name_matches = all_players[all_players['normalized_name'].str.contains(name_parts[-1], regex=False)]
+        if not last_name_matches.empty:
+            # Try to find the best match that contains most parts of the search query
+            best_match_count = 0
+            best_match_idx = -1
+            
+            for idx, row in last_name_matches.iterrows():
+                match_count = sum(part in row['normalized_name'] for part in name_parts)
+                if match_count > best_match_count:
+                    best_match_count = match_count
+                    best_match_idx = idx
+            
+            if best_match_idx != -1:
+                return str(last_name_matches.loc[best_match_idx][id_column])
+    
+    # If we still don't have a match, try a more relaxed search on any part of the name
+    for part in name_parts:
+        if len(part) >= 3:  # Only use parts with at least 3 characters to avoid common false positives
+            contains_matches = all_players[all_players['normalized_name'].str.contains(part, regex=False)]
+            if not contains_matches.empty:
+                return str(contains_matches.iloc[0][id_column])
         
     # No match found
     return None

@@ -153,13 +153,15 @@ def create_matchup_analyzer_ui():
 def create_consistency_tracker_ui():
     """Create the UI for the Consistency Tracker tool"""
     with gr.Row():
-        with gr.Column():
+        with gr.Column(scale=1):
+            gr.Markdown("### Player Selection")
             player_name = gr.Textbox(
-                placeholder="Enter player name",
-                label="Player Name"
+                placeholder="Enter player name (e.g., Nikola Jokić)",
+                label="Player Name",
+                info="You can use names with or without special characters (ć, č, etc.)"
             )
             
-            # Add popular player presets for quick selection
+            # Add popular player presets for quick selection with proper special characters
             gr.Markdown("#### Popular Players")
             with gr.Row():
                 with gr.Column(scale=1):
@@ -177,18 +179,29 @@ def create_consistency_tracker_ui():
                     player_btn7 = gr.Button("Kevin Durant", elem_classes=["preset-button"])
                     player_btn8 = gr.Button("Jayson Tatum", elem_classes=["preset-button"])
             
+            gr.Markdown("### Analysis Options")
             time_period = gr.Dropdown(
-                choices=["Last 10 Games", "Last 30 Days", "Season", "Custom Range"],
+                choices=["Last 10 Games", "Last 20 Games", "Last 30 Days", "Season"],
                 value="Last 10 Games",
-                label="Time Period"
+                label="Time Period",
+                info="Select the time period for analysis"
             )
-            analyze_consistency_btn = gr.Button("Analyze Consistency", variant="primary")
+            
+            scoring_system = gr.Dropdown(
+                choices=["standard", "categories", "custom"],
+                value="standard",
+                label="Scoring System",
+                info="Select fantasy scoring system to use"
+            )
+            
+            analyze_consistency_btn = gr.Button("Analyze Consistency", variant="primary", size="lg")
         
-        with gr.Column():
-            consistency_output = gr.Plot(label="Consistency Analysis")
-            consistency_text = gr.Markdown(label="Consistency Insights")
+        with gr.Column(scale=2):
+            gr.Markdown("### Consistency Analysis Results")
+            consistency_output = gr.Plot(label="Visual Analysis")
+            consistency_text = gr.Markdown(label="Insights")
     
-    # Set up player preset buttons
+    # Set up player preset buttons with exact names including special characters
     player_btn1.click(lambda: "LeBron James", inputs=[], outputs=[player_name])
     player_btn2.click(lambda: "Stephen Curry", inputs=[], outputs=[player_name])
     player_btn3.click(lambda: "Nikola Jokić", inputs=[], outputs=[player_name])
@@ -200,7 +213,7 @@ def create_consistency_tracker_ui():
     
     analyze_consistency_btn.click(
         fn=consistency_tracker,
-        inputs=[player_name, time_period],
+        inputs=[player_name, time_period, scoring_system],
         outputs=[consistency_text, consistency_output]
     )
     
