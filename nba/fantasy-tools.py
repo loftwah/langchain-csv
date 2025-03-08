@@ -7,6 +7,9 @@ from datetime import datetime, timedelta
 import os
 from functools import lru_cache
 
+# Set matplotlib style for dark mode
+plt.style.use('dark_background')
+
 # NBA API imports - using only confirmed endpoints
 from nba_api.stats.static import players
 from nba_api.stats.endpoints import (
@@ -21,6 +24,17 @@ from nba_api.stats.endpoints import (
 # Create a cache directory
 CACHE_DIR = "nba_api_cache"
 os.makedirs(CACHE_DIR, exist_ok=True)
+
+# Color scheme - NBA inspired
+NBA_COLORS = {
+    'primary': '#17408B',    # NBA blue
+    'secondary': '#C9082A',  # NBA red
+    'accent': '#FFFFFF',     # White
+    'background': '#121212', # Dark background
+    'text': '#FFFFFF',       # White text
+    'highlight': '#F7B801',  # Gold highlight
+    'charts': ['#17408B', '#C9082A', '#F7B801', '#1D428A', '#CE1141', '#552583', '#006BB6', '#007A33', '#860038', '#006BB6']
+}
 
 # -------------------- API Wrapper Functions --------------------
 
@@ -247,7 +261,7 @@ def draft_helper(scoring_system='standard', min_games=20, stat_category="PTS"):
     sorted_df = fantasy_df.sort_values('VALUE', ascending=False)
     
     # Create visualization
-    fig, ax = plt.subplots(figsize=(12, 8))
+    fig, ax = plt.subplots(figsize=(12, 8), facecolor=NBA_COLORS['background'])
     
     # Get top 20 players
     top_df = sorted_df.head(20)
@@ -255,20 +269,42 @@ def draft_helper(scoring_system='standard', min_games=20, stat_category="PTS"):
     # Determine player name column
     player_col = 'PLAYER_NAME' if 'PLAYER_NAME' in top_df.columns else 'PLAYER'
     
+    # Create color gradient based on values
+    max_value = top_df['FANTASY_POINTS'].max()
+    norm = plt.Normalize(0, max_value)
+    colors = plt.cm.coolwarm(norm(top_df['FANTASY_POINTS']))
+    
     # Create bar chart
-    bars = ax.barh(top_df[player_col], top_df['FANTASY_POINTS'], color='skyblue')
+    bars = ax.barh(top_df[player_col], top_df['FANTASY_POINTS'], color=colors)
     
     # Add labels
-    ax.set_xlabel('Fantasy Points per Game')
-    ax.set_title(f'Top 20 Players by Fantasy Value ({scoring_system} scoring)', fontsize=16)
+    ax.set_xlabel('Fantasy Points per Game', color=NBA_COLORS['accent'], fontsize=12)
+    ax.set_title(f'Top 20 Players by Fantasy Value ({scoring_system.title()} Scoring)', 
+                 fontsize=16, color=NBA_COLORS['accent'], pad=20)
     ax.invert_yaxis()  # Highest value at the top
+    
+    # Style the chart for dark mode
+    ax.set_facecolor(NBA_COLORS['background'])
+    ax.spines['bottom'].set_color(NBA_COLORS['accent'])
+    ax.spines['top'].set_color(NBA_COLORS['accent'])
+    ax.spines['left'].set_color(NBA_COLORS['accent'])
+    ax.spines['right'].set_color(NBA_COLORS['accent'])
+    ax.tick_params(axis='both', colors=NBA_COLORS['accent'])
     
     # Add value labels
     for i, bar in enumerate(bars):
         width = bar.get_width()
         ax.text(width + 0.5, bar.get_y() + bar.get_height()/2, 
                 f"{top_df['VALUE'].iloc[i]:.2f}", 
-                ha='left', va='center')
+                ha='left', va='center', color=NBA_COLORS['accent'])
+    
+    # Add Loftwah branding to the plot
+    fig.text(0.95, 0.02, "Created by Loftwah", fontsize=10, 
+             ha='right', va='bottom', color=NBA_COLORS['highlight'],
+             url="https://linkarooie.com/loftwah")
+    
+    # Add subtle grid
+    ax.grid(True, linestyle='--', alpha=0.2, color=NBA_COLORS['accent'])
     
     plt.tight_layout()
     
@@ -342,16 +378,24 @@ def matchup_analyzer(team1_players, team2_players, scoring_system='standard'):
         team2_totals[pct] = team2_df[pct].mean()
     
     # Create visualization
-    fig, axs = plt.subplots(3, 3, figsize=(15, 12))
+    fig, axs = plt.subplots(3, 3, figsize=(15, 12), facecolor=NBA_COLORS['background'])
     axs = axs.flatten()
     
     all_cats = categories + percentages
-    colors = ['#1f77b4', '#ff7f0e']  # Blue for team 1, orange for team 2
+    colors = [NBA_COLORS['primary'], NBA_COLORS['secondary']]  # Primary for team 1, secondary for team 2
     
     for i, cat in enumerate(all_cats):
         if i >= len(axs):  # Ensure we don't exceed available subplots
             break
             
+        # Set subplot style
+        axs[i].set_facecolor(NBA_COLORS['background'])
+        axs[i].spines['bottom'].set_color(NBA_COLORS['accent'])
+        axs[i].spines['top'].set_color(NBA_COLORS['accent'])
+        axs[i].spines['left'].set_color(NBA_COLORS['accent'])
+        axs[i].spines['right'].set_color(NBA_COLORS['accent'])
+        axs[i].tick_params(axis='both', colors=NBA_COLORS['accent'])
+        
         # For turnovers, lower is better
         if cat == 'TOV':
             heights = [team2_totals[cat], team1_totals[cat]]
@@ -362,14 +406,18 @@ def matchup_analyzer(team1_players, team2_players, scoring_system='standard'):
             labels = ['Team 1', 'Team 2']
             color_order = colors
         
-        bars = axs[i].bar(labels, heights, color=color_order)
-        axs[i].set_title(cat)
+        bars = axs[i].bar(labels, heights, color=color_order, alpha=0.8)
+        axs[i].set_title(cat, color=NBA_COLORS['accent'], fontsize=12)
         
         # Add values on bars
         for bar in bars:
             height = bar.get_height()
             axs[i].text(bar.get_x() + bar.get_width()/2., height,
-                        f'{height:.1f}', ha='center', va='bottom')
+                        f'{height:.1f}', ha='center', va='bottom', 
+                        color=NBA_COLORS['accent'], fontweight='bold')
+        
+        # Add subtle grid
+        axs[i].grid(True, linestyle='--', alpha=0.2, color=NBA_COLORS['accent'])
     
     # Calculate expected category wins
     team1_wins = 0
@@ -392,38 +440,57 @@ def matchup_analyzer(team1_players, team2_players, scoring_system='standard'):
     if len(axs) > len(all_cats):
         last_ax = axs[len(all_cats)]
         last_ax.axis('off')
+        last_ax.set_facecolor(NBA_COLORS['background'])
         
-        winner_text = f"Projected Result: "
+        # Create a stylish winner announcement
+        winner_color = NBA_COLORS['primary'] if team1_wins > team2_wins else NBA_COLORS['secondary'] if team2_wins > team1_wins else NBA_COLORS['highlight']
+        
         if team1_wins > team2_wins:
-            winner_text += f"Team 1 wins ({team1_wins}-{team2_wins})"
+            winner_text = f"Team 1 wins ({team1_wins}-{team2_wins})"
         elif team2_wins > team1_wins:
-            winner_text += f"Team 2 wins ({team2_wins}-{team1_wins})"
+            winner_text = f"Team 2 wins ({team2_wins}-{team1_wins})"
         else:
-            winner_text += f"Tie ({team1_wins}-{team2_wins})"
-            
-        last_ax.text(0.5, 0.5, winner_text, fontsize=14, ha='center', va='center')
+            winner_text = f"Tie ({team1_wins}-{team2_wins})"
+        
+        last_ax.text(0.5, 0.5, "PROJECTED MATCHUP RESULT", fontsize=14, 
+                    ha='center', va='center', color=NBA_COLORS['accent'],
+                    transform=last_ax.transAxes)
+        last_ax.text(0.5, 0.4, winner_text, fontsize=18, fontweight='bold',
+                    ha='center', va='center', color=winner_color,
+                    transform=last_ax.transAxes)
     
     # Hide any unused subplots
     for i in range(len(all_cats) + 1, len(axs)):
         axs[i].axis('off')
+        axs[i].set_facecolor(NBA_COLORS['background'])
     
-    plt.tight_layout()
+    # Add Loftwah branding to the plot
+    fig.text(0.95, 0.02, "Created by Loftwah", fontsize=10, 
+             ha='right', va='bottom', color=NBA_COLORS['highlight'],
+             url="https://linkarooie.com/loftwah")
     
-    # Create summary text
+    # Add a title to the entire figure
+    fig.suptitle("Fantasy Basketball Matchup Analysis", fontsize=20, 
+                color=NBA_COLORS['accent'], y=0.98)
+    
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    
+    # Create summary text with rich styling for markdown
     summary = f"""
-    ## Team Comparison: Team 1 vs Team 2
+    ## 🏀 Team Comparison: Team 1 vs Team 2
     
-    ### Projected Category Wins:
-    - Team 1: {team1_wins}
-    - Team 2: {team2_wins}
+    ### 📊 Projected Category Wins:
+    - **Team 1**: {team1_wins}
+    - **Team 2**: {team2_wins}
+    - **Result**: {"Team 1 Wins! 🔥" if team1_wins > team2_wins else "Team 2 Wins! 🔥" if team2_wins > team1_wins else "Tie Game! ⚖️"}
     
-    ### Team 1 Players:
+    ### 👥 Team 1 Players:
     {", ".join(team1_df['PLAYER_NAME'].tolist())}
     
-    ### Team 2 Players:
+    ### 👥 Team 2 Players:
     {", ".join(team2_df['PLAYER_NAME'].tolist())}
     
-    ### Category Breakdown:
+    ### 📈 Category Breakdown:
     """
     
     for cat in all_cats:
@@ -432,11 +499,14 @@ def matchup_analyzer(team1_players, team2_players, scoring_system='standard'):
         
         # For TOV, lower is better
         if cat == 'TOV':
-            winner = "Team 1" if val1 < val2 else "Team 2" if val2 < val1 else "Tie"
+            winner = "Team 1 ✅" if val1 < val2 else "Team 2 ✅" if val2 < val1 else "Tie ⚖️"
         else:
-            winner = "Team 1" if val1 > val2 else "Team 2" if val2 > val1 else "Tie"
+            winner = "Team 1 ✅" if val1 > val2 else "Team 2 ✅" if val2 > val1 else "Tie ⚖️"
             
         summary += f"- **{cat}**: Team 1 ({val1:.1f}) vs Team 2 ({val2:.1f}) - Winner: {winner}\n"
+    
+    # Add Loftwah credit to the summary
+    summary += "\n\n*Analysis provided by [Loftwah's Fantasy Basketball Assistant](https://linkarooie.com/loftwah)*"
     
     return summary, fig
 
@@ -458,35 +528,71 @@ def consistency_tracker(player_name, num_games=10, scoring_system='standard'):
     mean_fp, cv, min_fp, max_fp, fp_trend = calculate_consistency(recent_games, scoring_system)
     
     # Create visualization
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10), gridspec_kw={'height_ratios': [3, 1]})
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10), 
+                                   gridspec_kw={'height_ratios': [3, 1]},
+                                   facecolor=NBA_COLORS['background'])
     
-    # Game-by-game fantasy points trend
+    # Style for dark mode
+    for ax in [ax1, ax2]:
+        ax.set_facecolor(NBA_COLORS['background'])
+        for spine in ax.spines.values():
+            spine.set_color(NBA_COLORS['accent'])
+        ax.tick_params(axis='both', colors=NBA_COLORS['accent'])
+    
+    # Game-by-game fantasy points trend with gradient color
     game_indices = list(range(len(fp_trend)))
-    ax1.plot(game_indices, fp_trend, marker='o', linestyle='-', color='blue', linewidth=2)
-    ax1.set_xlabel('Game Number (Most Recent First)')
-    ax1.set_ylabel('Fantasy Points')
-    ax1.set_title(f'{player_name} - Last {len(fp_trend)} Games Fantasy Performance', fontsize=16)
+    
+    # Create color gradient based on performance
+    norm = plt.Normalize(min(fp_trend), max(fp_trend))
+    colors = plt.cm.coolwarm(norm(fp_trend))
+    
+    # Plot points and connect with gradient line
+    for i in range(len(game_indices) - 1):
+        ax1.plot(game_indices[i:i+2], fp_trend[i:i+2], 
+                color=colors[i], linewidth=2, alpha=0.8)
+        
+    # Add points on top
+    scatter = ax1.scatter(game_indices, fp_trend, c=fp_trend, cmap='coolwarm', 
+                         s=100, zorder=5, edgecolor='white', linewidth=1)
+    
+    # Add labels
+    ax1.set_xlabel('Game Number (Most Recent First)', color=NBA_COLORS['accent'], fontsize=12)
+    ax1.set_ylabel('Fantasy Points', color=NBA_COLORS['accent'], fontsize=12)
+    ax1.set_title(f'{player_name} - Fantasy Performance Analysis', 
+                 fontsize=16, color=NBA_COLORS['accent'], pad=20)
     
     # Add mean line
-    ax1.axhline(y=mean_fp, color='r', linestyle='--', label=f'Average: {mean_fp:.1f}')
+    mean_line = ax1.axhline(y=mean_fp, color=NBA_COLORS['highlight'], 
+                           linestyle='--', linewidth=2,
+                           label=f'Average: {mean_fp:.1f}')
     
     # Add min and max lines
-    ax1.axhline(y=min_fp, color='g', linestyle=':', label=f'Min: {min_fp:.1f}')
-    ax1.axhline(y=max_fp, color='purple', linestyle=':', label=f'Max: {max_fp:.1f}')
+    min_line = ax1.axhline(y=min_fp, color='#00FF00', linestyle=':', linewidth=1.5,
+                         label=f'Min: {min_fp:.1f}')
+    max_line = ax1.axhline(y=max_fp, color='#FF00FF', linestyle=':', linewidth=1.5,
+                         label=f'Max: {max_fp:.1f}')
     
-    ax1.grid(True, alpha=0.3)
-    ax1.legend()
+    # Add colorbar
+    cbar = plt.colorbar(scatter, ax=ax1)
+    cbar.set_label('Fantasy Points', color=NBA_COLORS['accent'])
+    cbar.ax.yaxis.set_tick_params(color=NBA_COLORS['accent'])
+    cbar.outline.set_edgecolor(NBA_COLORS['accent'])
+    plt.setp(plt.getp(cbar.ax.axes, 'yticklabels'), color=NBA_COLORS['accent'])
+    
+    ax1.grid(True, linestyle='--', alpha=0.2, color=NBA_COLORS['accent'])
+    ax1.legend(framealpha=0.7, facecolor=NBA_COLORS['background'], 
+              edgecolor=NBA_COLORS['accent'], loc='upper right')
     
     # Add consistency visualization
     consistency_score = 100 * (1 - min(cv, 1))  # Convert CV to a 0-100 scale (higher is more consistent)
     
     # Custom gauge chart for consistency
     consistency_categories = [
-        (0, 20, 'Very Inconsistent', 'red'),
-        (20, 40, 'Inconsistent', 'orange'),
-        (40, 60, 'Moderate', 'yellow'),
-        (60, 80, 'Consistent', 'lightgreen'),
-        (80, 100, 'Very Consistent', 'green')
+        (0, 20, 'Very Inconsistent', '#FF3030'),
+        (20, 40, 'Inconsistent', '#FF8C00'),
+        (40, 60, 'Moderate', '#FFFF00'),
+        (60, 80, 'Consistent', '#7CFC00'),
+        (80, 100, 'Very Consistent', '#00FF7F')
     ]
     
     # Find player's consistency category
@@ -505,24 +611,41 @@ def consistency_tracker(player_name, num_games=10, scoring_system='standard'):
     gauge_widths = [20] * len(gauge_colors)
     
     ax2.barh(y=[1] * len(gauge_positions), width=gauge_widths, left=gauge_positions, 
-             color=gauge_colors, alpha=0.6, height=0.5)
+             color=gauge_colors, alpha=0.8, height=0.5)
     
     # Add pointer for this player's consistency
-    ax2.scatter(consistency_score, 1, color='black', zorder=10, s=300, marker='^')
+    ax2.scatter(consistency_score, 1, color='white', edgecolor='black',
+               zorder=10, s=400, marker='^')
     
-    # Add consistency score and label
-    ax2.text(50, 1.5, f"Consistency Score: {consistency_score:.1f}/100 - {consistency_label}", 
-             ha='center', va='center', fontsize=16, fontweight='bold')
+    # Add consistency score and label with glowing effect
+    for offset in [-1, 1]:  # Create shadow effect
+        ax2.text(50 + offset*0.5, 1.5 + offset*0.1, 
+                f"Consistency Score: {consistency_score:.1f}/100", 
+                ha='center', va='center', fontsize=14, 
+                color='black', alpha=0.3)
+        
+    ax2.text(50, 1.5, f"Consistency Score: {consistency_score:.1f}/100", 
+             ha='center', va='center', fontsize=14, fontweight='bold',
+             color=NBA_COLORS['accent'])
+             
+    ax2.text(50, 1.0, f"Rating: {consistency_label}", 
+             ha='center', va='center', fontsize=16, fontweight='bold',
+             color=consistency_color)
     
     # Set up ax2 styling
     ax2.set_xlim(0, 100)
-    ax2.set_ylim(0, 2)
+    ax2.set_ylim(0, 2.5)
     ax2.set_xticks([])
     ax2.set_yticks([])
     ax2.spines['top'].set_visible(False)
     ax2.spines['right'].set_visible(False)
     ax2.spines['bottom'].set_visible(False)
     ax2.spines['left'].set_visible(False)
+    
+    # Add Loftwah branding to the plot
+    fig.text(0.95, 0.02, "Created by Loftwah", fontsize=10, 
+             ha='right', va='bottom', color=NBA_COLORS['highlight'],
+             url="https://linkarooie.com/loftwah")
     
     plt.tight_layout()
     
@@ -538,26 +661,28 @@ def consistency_tracker(player_name, num_games=10, scoring_system='standard'):
         if 'GAME_DATE' in fantasy_games.columns:
             fantasy_games['GAME_DATE'] = pd.to_datetime(fantasy_games['GAME_DATE']).dt.strftime('%Y-%m-%d')
         
-        # Create summary text
+        # Create summary text with emojis and rich formatting
         summary = f"""
-        ## {player_name} Consistency Analysis
+        ## 📊 {player_name} Consistency Analysis
         
-        ### Overview:
-        - **Average Fantasy Points**: {mean_fp:.1f}
+        ### 🔍 Overview:
+        - **Average Fantasy Points**: {mean_fp:.1f} pts
         - **Consistency Score**: {consistency_score:.1f}/100 ({consistency_label})
         - **Range**: {min_fp:.1f} to {max_fp:.1f} fantasy points
         - **Games Analyzed**: {len(fp_trend)}
         
-        ### Consistency Interpretation:
+        ### ⚖️ Consistency Interpretation:
         This player is **{consistency_label.lower()}** in their fantasy production. 
-        {"Their high consistency makes them a reliable starter each week." if consistency_score >= 60 else
-         "Their moderate consistency means they're generally reliable but can have off games." if consistency_score >= 40 else
-         "Their inconsistency makes them a boom-or-bust player who can win or lose your matchup."}
+        {"💯 Their high consistency makes them a reliable starter each week." if consistency_score >= 60 else
+         "👍 Their moderate consistency means they're generally reliable but can have off games." if consistency_score >= 40 else
+         "🎲 Their inconsistency makes them a boom-or-bust player who can win or lose your matchup."}
         
-        ### Recent Performance Trend:
-        {"Their production has been trending upward recently." if sum(fp_trend[:3]) > sum(fp_trend[-3:]) else
-         "Their production has been fairly stable recently." if abs(sum(fp_trend[:3]) - sum(fp_trend[-3:])) < mean_fp * 0.1 else
-         "Their production has been trending downward recently."}
+        ### 📈 Recent Performance Trend:
+        {"🔥 Their production has been trending upward recently." if sum(fp_trend[:3]) > sum(fp_trend[-3:]) else
+         "➡️ Their production has been fairly stable recently." if abs(sum(fp_trend[:3]) - sum(fp_trend[-3:])) < mean_fp * 0.1 else
+         "📉 Their production has been trending downward recently."}
+        
+        *Analysis provided by [Loftwah's Fantasy Basketball Assistant](https://linkarooie.com/loftwah)*
         """
         
         return summary, fig
@@ -568,118 +693,228 @@ def consistency_tracker(player_name, num_games=10, scoring_system='standard'):
 # -------------------- Gradio Interface --------------------
 
 def create_interface():
-    with gr.Blocks(title="Fantasy Basketball Tools") as demo:
-        gr.Markdown("# Fantasy Basketball Assistant")
-        gr.Markdown("A suite of tools to help you dominate your fantasy basketball league.")
+    # Custom CSS for dark mode theme
+    custom_css = """
+    body, .gradio-container {
+        background-color: #121212;
+        color: white;
+    }
+    
+    .tabs {
+        background-color: #1e1e1e;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .tab-nav {
+        background-color: #1e1e1e;
+        border-bottom: 2px solid #333;
+    }
+    
+    .tab-nav button {
+        color: white;
+        background-color: transparent;
+        margin: 0 5px;
+        padding: 10px 15px;
+        font-weight: bold;
+    }
+    
+    .tab-nav button.selected {
+        color: #F7B801;
+        border-bottom: 3px solid #F7B801;
+    }
+    
+    label {
+        color: #ddd !important;
+    }
+    
+    button.primary {
+        background-color: #17408B !important;
+        border: none !important;
+        color: white !important;
+        padding: 10px 20px !important;
+        border-radius: 5px !important;
+        font-weight: bold !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    button.primary:hover {
+        background-color: #C9082A !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .footer {
+        margin-top: 30px;
+        text-align: center;
+        color: #888;
+        padding: 20px;
+        border-top: 1px solid #333;
+    }
+    
+    a {
+        color: #F7B801 !important;
+        text-decoration: none !important;
+    }
+    
+    a:hover {
+        text-decoration: underline !important;
+    }
+    
+    .content-block {
+        background-color: #1e1e1e;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 15px 0;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    h1, h2, h3 {
+        color: white;
+    }
+    
+    input, select, textarea {
+        background-color: #2d2d2d !important;
+        color: white !important;
+        border: 1px solid #444 !important;
+    }
+    
+    .plot-container {
+        background-color: #1e1e1e;
+        border-radius: 8px;
+        padding: 15px;
+    }
+    
+    .gradio-table {
+        background-color: #1e1e1e;
+    }
+    
+    .highlight {
+        color: #F7B801;
+        font-weight: bold;
+    }
+    """
+
+    with gr.Blocks(title="Loftwah's Fantasy Basketball Tools", css=custom_css) as demo:
+        gr.HTML("""
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h1 style="color: #F7B801; font-size: 36px; margin-bottom: 5px;">🏀 Loftwah's Fantasy Basketball Assistant</h1>
+            <p style="font-size: 18px;">Professional analytics to dominate your fantasy basketball league</p>
+            <a href="https://linkarooie.com/loftwah" target="_blank" style="color: #F7B801; font-size: 14px;">
+                Visit Loftwah's Website
+            </a>
+        </div>
+        """)
         
         with gr.Tabs():
             # Draft Helper Tab
-            with gr.Tab("Draft Helper"):
-                gr.Markdown("## Fantasy Draft Helper")
-                gr.Markdown("Find undervalued players for your fantasy draft based on statistical analysis.")
-                
-                with gr.Row():
-                    with gr.Column(scale=1):
-                        draft_scoring = gr.Radio(
-                            choices=["standard", "points", "categories"],
-                            label="Scoring System",
-                            value="standard"
-                        )
-                        min_games = gr.Slider(
-                            minimum=5, maximum=50, value=20, step=5,
-                            label="Minimum Games Played"
-                        )
-                        stat_category = gr.Dropdown(
-                            choices=["PTS", "AST", "REB", "STL", "BLK", "FG_PCT", "FT_PCT", "FG3M"],
-                            label="Stat Category to Emphasize",
-                            value="PTS"
-                        )
-                        draft_btn = gr.Button("Find Value Players")
+            with gr.Tab("🏆 Draft Helper"):
+                with gr.Group(elem_classes=["content-block"]):
+                    gr.Markdown("## Fantasy Draft Helper")
+                    gr.Markdown("Find undervalued players for your fantasy draft based on statistical analysis.")
                     
-                    with gr.Column(scale=2):
-                        draft_plot = gr.Plot(label="Top Players by Value")
-                
-                draft_table = gr.Dataframe(label="Player Rankings")
-                
-                draft_btn.click(
-                    fn=draft_helper,
-                    inputs=[draft_scoring, min_games, stat_category],
-                    outputs=[draft_table, draft_plot]
-                )
+                    with gr.Row():
+                        with gr.Column(scale=1):
+                            draft_scoring = gr.Radio(
+                                choices=["standard", "points", "categories"],
+                                label="Scoring System",
+                                value="standard"
+                            )
+                            min_games = gr.Slider(
+                                minimum=5, maximum=50, value=20, step=5,
+                                label="Minimum Games Played"
+                            )
+                            stat_category = gr.Dropdown(
+                                choices=["PTS", "AST", "REB", "STL", "BLK", "FG_PCT", "FT_PCT", "FG3M"],
+                                label="Stat Category to Emphasize",
+                                value="PTS"
+                            )
+                            draft_btn = gr.Button("Find Value Players", variant="primary")
+                        
+                        with gr.Column(scale=2):
+                            draft_plot = gr.Plot(label="Top Players by Value", elem_classes=["plot-container"])
+                    
+                    draft_table = gr.Dataframe(label="Player Rankings")
+                    
+                    draft_btn.click(
+                        fn=draft_helper,
+                        inputs=[draft_scoring, min_games, stat_category],
+                        outputs=[draft_table, draft_plot]
+                    )
             
             # Matchup Analyzer Tab
-            with gr.Tab("Matchup Analyzer"):
-                gr.Markdown("## Weekly Matchup Analyzer")
-                gr.Markdown("Compare two fantasy teams to predict matchup outcomes.")
-                
-                with gr.Row():
-                    with gr.Column(scale=1):
-                        team1 = gr.Textbox(
-                            label="Team 1 Players (comma-separated)",
-                            placeholder="LeBron James, Anthony Davis, Kevin Durant"
-                        )
-                        team2 = gr.Textbox(
-                            label="Team 2 Players (comma-separated)",
-                            placeholder="Nikola Jokic, Stephen Curry, Luka Doncic"
-                        )
-                        matchup_scoring = gr.Radio(
-                            choices=["standard", "points", "categories"],
-                            label="Scoring System",
-                            value="standard"
-                        )
-                        matchup_btn = gr.Button("Compare Teams")
-                
-                matchup_result = gr.Markdown(label="Matchup Analysis")
-                matchup_plot = gr.Plot(label="Category Comparison")
-                
-                matchup_btn.click(
-                    fn=matchup_analyzer,
-                    inputs=[team1, team2, matchup_scoring],
-                    outputs=[matchup_result, matchup_plot]
-                )
+            with gr.Tab("⚔️ Matchup Analyzer"):
+                with gr.Group(elem_classes=["content-block"]):
+                    gr.Markdown("## Weekly Matchup Analyzer")
+                    gr.Markdown("Compare two fantasy teams to predict matchup outcomes.")
+                    
+                    with gr.Row():
+                        with gr.Column(scale=1):
+                            team1 = gr.Textbox(
+                                label="Team 1 Players (comma-separated)",
+                                placeholder="LeBron James, Anthony Davis, Kevin Durant"
+                            )
+                            team2 = gr.Textbox(
+                                label="Team 2 Players (comma-separated)",
+                                placeholder="Nikola Jokic, Stephen Curry, Luka Doncic"
+                            )
+                            matchup_scoring = gr.Radio(
+                                choices=["standard", "points", "categories"],
+                                label="Scoring System",
+                                value="standard"
+                            )
+                            matchup_btn = gr.Button("Compare Teams", variant="primary")
+                    
+                    matchup_result = gr.Markdown(label="Matchup Analysis")
+                    matchup_plot = gr.Plot(label="Category Comparison", elem_classes=["plot-container"])
+                    
+                    matchup_btn.click(
+                        fn=matchup_analyzer,
+                        inputs=[team1, team2, matchup_scoring],
+                        outputs=[matchup_result, matchup_plot]
+                    )
             
             # Consistency Tracker Tab
-            with gr.Tab("Consistency Tracker"):
-                gr.Markdown("## Player Consistency Tracker")
-                gr.Markdown("Analyze a player's consistency to identify reliable starters vs. boom/bust players.")
-                
-                with gr.Row():
-                    with gr.Column(scale=1):
-                        player_name = gr.Textbox(
-                            label="Player Name",
-                            placeholder="LeBron James"
-                        )
-                        num_games = gr.Slider(
-                            minimum=5, maximum=20, value=10, step=1,
-                            label="Number of Recent Games to Analyze"
-                        )
-                        consistency_scoring = gr.Radio(
-                            choices=["standard", "points", "categories"],
-                            label="Scoring System",
-                            value="standard"
-                        )
-                        consistency_btn = gr.Button("Analyze Player")
-                
-                consistency_result = gr.Markdown(label="Consistency Analysis")
-                consistency_plot = gr.Plot(label="Performance Consistency")
-                
-                consistency_btn.click(
-                    fn=consistency_tracker,
-                    inputs=[player_name, num_games, consistency_scoring],
-                    outputs=[consistency_result, consistency_plot]
-                )
+            with gr.Tab("📊 Consistency Tracker"):
+                with gr.Group(elem_classes=["content-block"]):
+                    gr.Markdown("## Player Consistency Tracker")
+                    gr.Markdown("Analyze a player's consistency to identify reliable starters vs. boom/bust players.")
+                    
+                    with gr.Row():
+                        with gr.Column(scale=1):
+                            player_name = gr.Textbox(
+                                label="Player Name",
+                                placeholder="LeBron James"
+                            )
+                            num_games = gr.Slider(
+                                minimum=5, maximum=20, value=10, step=1,
+                                label="Number of Recent Games to Analyze"
+                            )
+                            consistency_scoring = gr.Radio(
+                                choices=["standard", "points", "categories"],
+                                label="Scoring System",
+                                value="standard"
+                            )
+                            consistency_btn = gr.Button("Analyze Player", variant="primary")
+                    
+                    consistency_result = gr.Markdown(label="Consistency Analysis")
+                    consistency_plot = gr.Plot(label="Performance Consistency", elem_classes=["plot-container"])
+                    
+                    consistency_btn.click(
+                        fn=consistency_tracker,
+                        inputs=[player_name, num_games, consistency_scoring],
+                        outputs=[consistency_result, consistency_plot]
+                    )
         
-        gr.Markdown("""
-        ## About this Tool
-        
-        This Fantasy Basketball Assistant uses data from the official NBA API to provide analytics and insights for fantasy basketball managers.
-        
-        **Features:**
-        - **Draft Helper**: Identifies value players based on fantasy production relative to their expected draft position
-        - **Matchup Analyzer**: Projects head-to-head category winners based on recent performance
-        - **Consistency Tracker**: Evaluates player reliability to help you balance consistent producers with high-upside options
-        
-        Data is updated daily during the NBA season.
+        gr.HTML("""
+        <div class="footer">
+            <p>Powered by NBA data | Created by <a href="https://linkarooie.com/loftwah" target="_blank">Loftwah</a> | © 2025</p>
+            <p style="font-size: 14px;">
+                <a href="https://linkarooie.com/loftwah" target="_blank">Website</a> | 
+                <a href="https://twitter.com/loftwah" target="_blank">Twitter</a> | 
+                <a href="https://github.com/loftwah" target="_blank">GitHub</a>
+            </p>
+        </div>
         """)
     
     return demo
